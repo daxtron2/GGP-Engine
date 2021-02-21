@@ -5,6 +5,7 @@
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
 #include <vector>
 #include "Mesh.h"
+#include "Entity.h"
 #include <memory>
 
 class Game 
@@ -27,6 +28,7 @@ private:
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
 	void CreateBasicGeometry();
+	void CreateEntities();
 
 	
 	// Note the usage of ComPtr below
@@ -40,7 +42,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
-	std::vector<std::unique_ptr<Mesh>> meshes;
+	std::vector<std::shared_ptr<Mesh>> meshes;
+	std::vector<std::unique_ptr<Entity>> entities;
 
 };
 

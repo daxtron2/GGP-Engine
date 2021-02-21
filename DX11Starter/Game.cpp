@@ -59,6 +59,7 @@ void Game::Init()
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
 	CreateBasicGeometry();
+	CreateEntities();
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -193,42 +194,51 @@ void Game::CreateBasicGeometry()
 	unsigned int triangleIndices[] = { 0, 1, 2 };
 
 	//create and store the triangle mesh
-	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(
+	meshes.push_back(std::make_shared<Mesh>(Mesh(
 		triangleVerts, 3,
 		triangleIndices, 3,
 		device)));
 
 	Vertex squareVerts[] =
 	{
-		{ XMFLOAT3(0.3f, +0.25f, +0.0f), red }, //top left
-		{ XMFLOAT3(+0.8f, +0.25f, +0.0f), blue }, //top right
-		{ XMFLOAT3(+0.8f, -0.25f, +0.0f), green },//bottom right
-		{ XMFLOAT3(0.3f, -0.25f, +0.0f), purple }, //bottom left
+		{ XMFLOAT3(-0.25f, +0.25f, +0.0f), red }, //top left
+		{ XMFLOAT3(+0.25f, +0.25f, +0.0f), blue }, //top right
+		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), green },//bottom right
+		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), purple }, //bottom left
 	};
 	unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
 
-	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(
+	meshes.push_back(std::make_shared<Mesh>(Mesh(
 		squareVerts, 4,
 		squareIndices, 6,
 		device)));
 
 	Vertex pentagonVerts[] =
 	{
-		{ XMFLOAT3(-0.50f, +0.25f, +0.0f), red },
-		{ XMFLOAT3(-0.40f, -0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.60f, -0.25f, +0.0f), green },
-		{ XMFLOAT3(-0.65f, +0.05f, +0.0f), purple },
-		{ XMFLOAT3(-0.35f, +0.05f, +0.0f), orange },
+		{ XMFLOAT3(-0.00f, +0.25f, +0.0f), red },
+		{ XMFLOAT3(+0.10f, -0.25f, +0.0f), blue },
+		{ XMFLOAT3(-0.10f, -0.25f, +0.0f), green },
+		{ XMFLOAT3(-0.15f, +0.05f, +0.0f), purple },
+		{ XMFLOAT3(+0.15f, +0.05f, +0.0f), orange },
 
 	};
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 4, 1 };
 
-	meshes.push_back(std::unique_ptr<Mesh>(new Mesh(
+	meshes.push_back(std::make_shared<Mesh>(Mesh(
 		pentagonVerts, 5,
 		pentagonIndices, 9,
 		device)));
 }
+void Game::CreateEntities() {
 
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[0])));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[1])));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[2])));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[2])));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[1])));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[0])));
+
+}
 
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
@@ -248,6 +258,11 @@ void Game::Update(float deltaTime, float totalTime)
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
+
+	for (size_t i = 0; i < entities.size(); i++)
+	{
+		entities[i]->Update(deltaTime, totalTime);
+	}
 }
 
 // --------------------------------------------------------
@@ -284,44 +299,9 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - However, this isn't always the case (but might be for this course)
 	context->IASetInputLayout(inputLayout.Get());
 
-
-	VertexShaderExternalData vsData; 
-	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f); 
-	vsData.offset = XMFLOAT3(0.25f, 0.0f, 0.0f);
-
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {}; 
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer); 
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData)); 
-	context->Unmap(vsConstantBuffer.Get(), 0);
-
-	context->VSSetConstantBuffers
-	   (0,// Which slot (register) to bind the buffer to?
-		1,// How many are we activating?  Can do multiple at once
-		vsConstantBuffer.GetAddressOf());// Array of buffers (or the address of one)
-
-	for (int i = 0; i < meshes.size(); i++)
+	for (int i = 0; i < entities.size(); i++)
 	{
-		// Set buffers in the input assembler
-		//  - Do this ONCE PER OBJECT you're drawing, since each object might
-		//    have different geometry.
-		//  - for this demo, this step *could* simply be done once during Init(),
-		//    but I'm doing it here because it's often done multiple times per frame
-		//    in a larger application/game
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		context->IASetVertexBuffers(0, 1, meshes[i]->GetVertexBuffer().GetAddressOf(), &stride, &offset);
-		context->IASetIndexBuffer(meshes[i]->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
-
-
-		// Finally do the actual drawing
-		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-		//     vertices in the currently set VERTEX BUFFER
-		context->DrawIndexed(
-			meshes[i]->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
+		entities[i]->Draw(context, vsConstantBuffer);		
 	}
 
 
