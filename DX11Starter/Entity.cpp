@@ -1,11 +1,14 @@
 #include "Entity.h"
 #include "BufferStructs.h"
 
-Entity::Entity(std::shared_ptr<Mesh> _mesh)
+Entity::Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material)
 {
+	material = _material;
 	mesh = _mesh;
 	float randX = -1.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0f - -1.0f)));
-	transform.SetPosition(randX, 0, 0);
+	float randZ = -1.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0f - -1.0f)));
+
+	transform.SetPosition(randX, 0, randZ);
 }
 
 Entity::~Entity()
@@ -30,11 +33,16 @@ void Entity::Update(float deltaTime, float totalTime)
 }
 
 
-void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer)
+void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, Camera* camera)
 {
 	VertexShaderExternalData vsData{};
-	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	vsData.colorTint = material->GetColorTint();
 	vsData.worldMatrix = transform.GetWorldMatrix();
+	vsData.projectionMatrix = camera->GetProjectionMatrix();
+	vsData.viewMatrix = camera->GetViewMatrix();
+
+	context->VSSetShader(material->GetVertexShader().Get(), 0, 0);
+	context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
 
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);

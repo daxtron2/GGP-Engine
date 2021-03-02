@@ -1,11 +1,12 @@
 #include "Game.h"
 #include "Vertex.h"
 #include "BufferStructs.h"
+#include "Material.h"
+
 
 // Needed for a helper function to read compiled shader files from the hard drive
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
-
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -78,6 +79,8 @@ void Game::Init()
 	cbDesc.Usage			 = D3D11_USAGE_DYNAMIC;
 
 	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+	
+	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f, 1.f);
 }
 
 // --------------------------------------------------------
@@ -194,10 +197,10 @@ void Game::CreateBasicGeometry()
 	unsigned int triangleIndices[] = { 0, 1, 2 };
 
 	//create and store the triangle mesh
-	meshes.push_back(std::make_shared<Mesh>(Mesh(
+	meshes.push_back(std::make_shared<Mesh>(
 		triangleVerts, 3,
 		triangleIndices, 3,
-		device)));
+		device));
 
 	Vertex squareVerts[] =
 	{
@@ -208,10 +211,10 @@ void Game::CreateBasicGeometry()
 	};
 	unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
 
-	meshes.push_back(std::make_shared<Mesh>(Mesh(
+	meshes.push_back(std::make_shared<Mesh>(
 		squareVerts, 4,
 		squareIndices, 6,
-		device)));
+		device));
 
 	Vertex pentagonVerts[] =
 	{
@@ -224,20 +227,22 @@ void Game::CreateBasicGeometry()
 	};
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 4, 1 };
 
-	meshes.push_back(std::make_shared<Mesh>(Mesh(
+	meshes.push_back(std::make_shared<Mesh>(
 		pentagonVerts, 5,
 		pentagonIndices, 9,
-		device)));
+		device));
 }
 void Game::CreateEntities() {
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.5f, 0.5f, 1.f), pixelShader, vertexShader);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.5f, 1.0f, 0.5f, 1.f), pixelShader, vertexShader);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.5f, 1.0f, 1.f), pixelShader, vertexShader);
 
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[0])));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[1])));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[2])));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[2])));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[1])));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[0])));
-
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat1)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat3)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat2)));
 }
 
 // --------------------------------------------------------
@@ -248,6 +253,10 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+	if (camera != nullptr)
+	{
+		camera->UpdateProjectionMatrix((float)this->width / this->height);
+	}
 }
 
 // --------------------------------------------------------
@@ -263,6 +272,7 @@ void Game::Update(float deltaTime, float totalTime)
 	{
 		entities[i]->Update(deltaTime, totalTime);
 	}
+	camera->Update(deltaTime, this->hWnd);
 }
 
 // --------------------------------------------------------
@@ -301,7 +311,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	for (int i = 0; i < entities.size(); i++)
 	{
-		entities[i]->Draw(context, vsConstantBuffer);		
+		entities[i]->Draw(context, vsConstantBuffer, camera.get());		
 	}
 
 

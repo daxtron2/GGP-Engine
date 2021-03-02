@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include <memory>
+#include "Camera.h"
 
 class Game 
 	: public DXCore
@@ -45,5 +46,6 @@ private:
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::unique_ptr<Entity>> entities;
 
+	std::shared_ptr<Camera> camera;
 };
 
