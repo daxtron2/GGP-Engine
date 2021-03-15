@@ -14,6 +14,8 @@ private:
 	ComPtr<ID3D11Buffer> indexBuffer;
 	int indexBufferLength = 0;
 
+	void Init(Vertex* vertices, int vertexCount, unsigned int* indices, int indexCount, ComPtr<ID3D11Device> device);
+
 public:
 	ComPtr<ID3D11Buffer> GetVertexBuffer();
 	ComPtr<ID3D11Buffer> GetIndexBuffer();
@@ -23,6 +25,8 @@ public:
 	Mesh(Vertex* vertices, int vertexCount, 
 		 unsigned int* indices, int indexCount, 
 		 ComPtr<ID3D11Device> device);
+
+	Mesh(const char* filename, ComPtr<ID3D11Device> device);
 
 };
 

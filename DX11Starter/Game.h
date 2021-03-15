@@ -8,6 +8,7 @@
 #include "Entity.h"
 #include <memory>
 #include "Camera.h"
+#include "Lights.h"
 
 class Game 
 	: public DXCore
@@ -28,6 +29,7 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
+	void LoadModels();
 	void CreateBasicGeometry();
 	void CreateEntities();
 
@@ -38,14 +40,18 @@ private:
 	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
 	
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+	std::shared_ptr<SimplePixelShader> pixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::unique_ptr<Entity>> entities;
 
 	std::shared_ptr<Camera> camera;
+
+	DirectionalLight directionalLight1 = DirectionalLight();
+	DirectionalLight directionalLight2 = DirectionalLight();
+	DirectionalLight directionalLight3 = DirectionalLight();
+
+	XMFLOAT3 ambientColor = XMFLOAT3(0.05f, 0.05f, 0.1f);
 };
 

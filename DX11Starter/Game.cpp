@@ -1,6 +1,5 @@
 #include "Game.h"
 #include "Vertex.h"
-#include "BufferStructs.h"
 #include "Material.h"
 
 
@@ -59,28 +58,28 @@ void Game::Init()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
-	CreateBasicGeometry();
+	//CreateBasicGeometry();
+	LoadModels();
 	CreateEntities();
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Get size as the next multiple of 16(don’t hardcode a numberhere!)
-	unsigned int size = sizeof(VertexShaderExternalData);
-	size = (size + 15) / 16 * 16;// This will work even if your struct size changes
-
-	// Describe the constant buffer
-	D3D11_BUFFER_DESC cbDesc = {};	// Sets struct to all zeros
-	cbDesc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
-	cbDesc.ByteWidth		 = size;	// Must be a multiple of 16
-	cbDesc.CPUAccessFlags	 = D3D11_CPU_ACCESS_WRITE;
-	cbDesc.Usage			 = D3D11_USAGE_DYNAMIC;
-
-	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
 	
 	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f, 1.f);
+
+	directionalLight1.color = XMFLOAT3(1.0f, 0.1f, 0.1f);
+	directionalLight1.intensity = 1.0f;
+	directionalLight1.direction = XMFLOAT3(1, -1, 1);
+
+	directionalLight2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
+	directionalLight2.intensity = 1.0f;
+	directionalLight2.direction = XMFLOAT3(-1, -1, 1);
+
+	directionalLight3.color = XMFLOAT3(0.1f, 0.1f, 1.0f);
+	directionalLight3.intensity = 1.0f;
+	directionalLight3.direction = XMFLOAT3(0, 1, 1);
 }
 
 // --------------------------------------------------------
@@ -93,82 +92,25 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	// Blob for reading raw data
-	// - This is a simplified way of handling raw data
-	ID3DBlob* shaderBlob;
 
-	// Read our compiled vertex shader code into a blob
-	// - Essentially just "open the file and plop its contents here"
-	D3DReadFileToBlob(
-		GetFullPathTo_Wide(L"VertexShader.cso").c_str(), // Using a custom helper for file paths
-		&shaderBlob);
-
-	// Create a vertex shader from the information we
-	// have read into the blob above
-	// - A blob can give a pointer to its contents, and knows its own size
-	device->CreateVertexShader(
-		shaderBlob->GetBufferPointer(), // Get a pointer to the blob's contents
-		shaderBlob->GetBufferSize(),	// How big is that data?
-		0,								// No classes in this shader
-		vertexShader.GetAddressOf());	// The address of the ID3D11VertexShader*
-
-
-	// Create an input layout that describes the vertex format
-	// used by the vertex shader we're using
-	//  - This is used by the pipeline to know how to interpret the raw data
-	//     sitting inside a vertex buffer
-	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-	//  - Luckily, we already have that loaded (the blob above)
-	D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
-
-	// Set up the first element - a position, which is 3 float values
-	inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
-	inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
-	inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
-
-	// Set up the second element - a color, which is 4 more float values
-	inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
-	inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
-	inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
-
-	// Create the input layout, verifying our description against actual shader code
-	device->CreateInputLayout(
-		inputElements,					// An array of descriptions
-		2,								// How many elements in that array
-		shaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
-		shaderBlob->GetBufferSize(),	// Size of the shader code that uses this layout
-		inputLayout.GetAddressOf());	// Address of the resulting ID3D11InputLayout*
-
-
-
-	// Read and create the pixel shader
-	//  - Reusing the same blob here, since we're done with the vert shader code
-	D3DReadFileToBlob(
-		GetFullPathTo_Wide(L"PixelShader.cso").c_str(), // Using a custom helper for file paths
-		&shaderBlob);
-
-	device->CreatePixelShader(
-		shaderBlob->GetBufferPointer(),
-		shaderBlob->GetBufferSize(),
-		0,
-		pixelShader.GetAddressOf());
+	vertexShader = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShader.cso").c_str());
+	pixelShader = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShader.cso").c_str());
 }
 
-
+void Game::LoadModels() 
+{
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/sphere.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cube.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/torus.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cylinder.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/helix.obj").c_str(), device));
+}
 
 // --------------------------------------------------------
 // Creates the geometry we're going to draw - a single triangle for now
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 purple = XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 orange = XMFLOAT4(1.0f, 0.647f, 0.0f, 1.0f);
-
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
@@ -184,9 +126,9 @@ void Game::CreateBasicGeometry()
 	//    since we're describing the triangle in terms of the window itself
 	Vertex triangleVerts[] =
 	{
-		{ XMFLOAT3(+0.0f, +0.25f, +0.0f), red },
-		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), green },
+		{ XMFLOAT3(+0.0f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
 	};
 
 	// Set up the indices, which tell us which vertices to use and in which order
@@ -204,10 +146,10 @@ void Game::CreateBasicGeometry()
 
 	Vertex squareVerts[] =
 	{
-		{ XMFLOAT3(-0.25f, +0.25f, +0.0f), red }, //top left
-		{ XMFLOAT3(+0.25f, +0.25f, +0.0f), blue }, //top right
-		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), green },//bottom right
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), purple }, //bottom left
+		{ XMFLOAT3(-0.25f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //top left
+		{ XMFLOAT3(+0.25f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //top right
+		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },//bottom right
+		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //bottom left
 	};
 	unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
 
@@ -218,11 +160,11 @@ void Game::CreateBasicGeometry()
 
 	Vertex pentagonVerts[] =
 	{
-		{ XMFLOAT3(-0.00f, +0.25f, +0.0f), red },
-		{ XMFLOAT3(+0.10f, -0.25f, +0.0f), blue },
-		{ XMFLOAT3(-0.10f, -0.25f, +0.0f), green },
-		{ XMFLOAT3(-0.15f, +0.05f, +0.0f), purple },
-		{ XMFLOAT3(+0.15f, +0.05f, +0.0f), orange },
+		{ XMFLOAT3(-0.00f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(+0.10f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(-0.10f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(-0.15f, +0.05f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
+		{ XMFLOAT3(+0.15f, +0.05f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
 
 	};
 	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 4, 1 };
@@ -233,16 +175,15 @@ void Game::CreateBasicGeometry()
 		device));
 }
 void Game::CreateEntities() {
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.5f, 0.5f, 1.f), pixelShader, vertexShader);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.5f, 1.0f, 0.5f, 1.f), pixelShader, vertexShader);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.5f, 1.0f, 1.f), pixelShader, vertexShader);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.1f, 0.1f, 1.f), pixelShader, vertexShader);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.1f, 1.0f, 0.1f, 1.f), pixelShader, vertexShader);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.1f, 0.1f, 1.0f, 1.f), pixelShader, vertexShader);
 
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat1)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat3)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat2)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[3], mat1)));
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[4], mat3)));
 }
 
 // --------------------------------------------------------
@@ -293,25 +234,31 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	pixelShader->SetData(
+		"light1", 
+		&directionalLight1, 
+		sizeof(DirectionalLight)
+	);
 
-	// Set the vertex and pixel shaders to use for the next Draw() command
-	//  - These don't technically need to be set every frame
-	//  - Once you start applying different shaders to different objects,
-	//    you'll need to swap the current shaders before each draw
-	context->VSSetShader(vertexShader.Get(), 0, 0);
-	context->PSSetShader(pixelShader.Get(), 0, 0);
+	pixelShader->SetData(
+		"light2",
+		&directionalLight2,
+		sizeof(DirectionalLight)
+	);
 
+	pixelShader->SetData(
+		"light3",
+		&directionalLight3,
+		sizeof(DirectionalLight)
+	);
 
-	// Ensure the pipeline knows how to interpret the data (numbers)
-	// from the vertex buffer.  
-	// - If all of your 3D models use the exact same vertex layout,
-	//    this could simply be done once in Init()
-	// - However, this isn't always the case (but might be for this course)
-	context->IASetInputLayout(inputLayout.Get());
+	pixelShader->SetFloat3("ambientColor", ambientColor);
+
+	pixelShader->CopyAllBufferData();
 
 	for (int i = 0; i < entities.size(); i++)
 	{
-		entities[i]->Draw(context, vsConstantBuffer, camera.get());		
+		entities[i]->Draw(context, camera.get());		
 	}
 
 

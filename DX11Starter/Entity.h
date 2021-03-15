@@ -19,7 +19,7 @@ public:
 	std::shared_ptr<Mesh> GetMesh();
 	Transform* GetTransform();
 
-	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, Camera* camera);
+	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera);
 	void Update(float deltaTime, float totalTime);
 };
 

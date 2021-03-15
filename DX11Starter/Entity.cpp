@@ -1,14 +1,13 @@
 #include "Entity.h"
-#include "BufferStructs.h"
 
 Entity::Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material)
 {
 	material = _material;
 	mesh = _mesh;
-	float randX = -1.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0f - -1.0f)));
-	float randZ = -1.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0f - -1.0f)));
+	float randX = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+	float randZ = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
 
-	transform.SetPosition(randX, 0, randZ);
+	transform.SetPosition(randX, 0, 0);
 }
 
 Entity::~Entity()
@@ -26,33 +25,26 @@ Transform* Entity::GetTransform()
 }
 void Entity::Update(float deltaTime, float totalTime) 
 {
-	XMFLOAT3 pos = transform.GetPosition();
-	transform.SetPosition(pos.x, sinf(totalTime), pos.z);
-	transform.Rotate(0, 0, 1 * deltaTime);
-	transform.SetScale(sinf(totalTime) + 1.5f, sinf(totalTime) + 1.5f, 1);
+	//XMFLOAT3 pos = transform.GetPosition();
+	//transform.SetPosition(pos.x, sinf(totalTime), pos.z);
+	//transform.Rotate(0, 0, 1 * deltaTime);
+	//transform.SetScale(sinf(totalTime) + 1.5f, sinf(totalTime) + 1.5f, 1);
 }
 
 
-void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, Camera* camera)
+void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera)
 {
-	VertexShaderExternalData vsData{};
-	vsData.colorTint = material->GetColorTint();
-	vsData.worldMatrix = transform.GetWorldMatrix();
-	vsData.projectionMatrix = camera->GetProjectionMatrix();
-	vsData.viewMatrix = camera->GetViewMatrix();
+	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
+	vs->SetFloat4("colorTint", material->GetColorTint());
+	vs->SetMatrix4x4("world", transform.GetWorldMatrix());
+	vs->SetMatrix4x4("view", camera->GetViewMatrix());
+	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
 
-	context->VSSetShader(material->GetVertexShader().Get(), 0, 0);
-	context->PSSetShader(material->GetPixelShader().Get(), 0, 0);
+	material->GetVertexShader()->SetShader();
+	material->GetPixelShader()->SetShader();
 
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	context->Unmap(vsConstantBuffer.Get(), 0);
+	vs->CopyAllBufferData();
 
-	context->VSSetConstantBuffers
-	(0,// Which slot (register) to bind the buffer to?
-		1,// How many are we activating?  Can do multiple at once
-		vsConstantBuffer.GetAddressOf());// Array of buffers (or the address of one)
 
 	// Set buffers in the input assembler
 		//  - Do this ONCE PER OBJECT you're drawing, since each object might

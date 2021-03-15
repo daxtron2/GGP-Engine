@@ -84,10 +84,11 @@ void Camera::Update(float deltaTime, HWND windowHandle)
 	}
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{
-
+		transform.MoveRelative(0, speed, 0);
 	}
 	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
 	{
+		transform.MoveRelative(0, -speed, 0);
 
 	}
 
