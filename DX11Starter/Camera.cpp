@@ -46,6 +46,11 @@ XMFLOAT4X4 Camera::GetProjectionMatrix()
 	return projectionMatrix;
 }
 
+Transform* Camera::GetTransform()
+{
+	return &transform;
+}
+
 void Camera::UpdateViewMatrix()
 {
 	XMFLOAT3 tPos = transform.GetPosition();
@@ -65,7 +70,8 @@ void Camera::UpdateProjectionMatrix(float aspectRatio)
 
 void Camera::Update(float deltaTime, HWND windowHandle)
 {
-	float speed = movementSpeed * deltaTime;
+	float speed = (GetAsyncKeyState(VK_SHIFT) & 0x8000 ? movementSpeed * 2 : movementSpeed) * deltaTime;
+	
 	if (GetAsyncKeyState('W') & 0x8000) 
 	{
 		transform.MoveRelative(0, 0, speed);
@@ -89,8 +95,8 @@ void Camera::Update(float deltaTime, HWND windowHandle)
 	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
 	{
 		transform.MoveRelative(0, -speed, 0);
-
 	}
+	
 
 	POINT mousePos = {};
 	GetCursorPos(&mousePos);

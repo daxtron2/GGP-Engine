@@ -40,10 +40,16 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* c
 	vs->SetMatrix4x4("view", camera->GetViewMatrix());
 	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
 
+	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
+	ps->SetFloat("specIntensity", material->GetSpecularIntensity());
+	ps->SetSamplerState("samplerState", material->GetSamplerState());
+	ps->SetShaderResourceView("diffuseTexture", material->GetTextureSRV());
+
 	material->GetVertexShader()->SetShader();
 	material->GetPixelShader()->SetShader();
 
 	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 
 	// Set buffers in the input assembler

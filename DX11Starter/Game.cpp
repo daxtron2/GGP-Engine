@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Vertex.h"
 #include "Material.h"
+#include "WICTextureLoader.h"
 
 
 // Needed for a helper function to read compiled shader files from the hard drive
@@ -61,6 +62,7 @@ void Game::Init()
 	//CreateBasicGeometry();
 	LoadModels();
 	CreateEntities();
+	CreateLights();
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -68,18 +70,8 @@ void Game::Init()
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
 	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f, 1.f);
+	
 
-	directionalLight1.color = XMFLOAT3(1.0f, 0.1f, 0.1f);
-	directionalLight1.intensity = 1.0f;
-	directionalLight1.direction = XMFLOAT3(1, -1, 1);
-
-	directionalLight2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
-	directionalLight2.intensity = 1.0f;
-	directionalLight2.direction = XMFLOAT3(-1, -1, 1);
-
-	directionalLight3.color = XMFLOAT3(0.1f, 0.1f, 1.0f);
-	directionalLight3.intensity = 1.0f;
-	directionalLight3.direction = XMFLOAT3(0, 1, 1);
 }
 
 // --------------------------------------------------------
@@ -175,17 +167,61 @@ void Game::CreateBasicGeometry()
 		device));
 }
 void Game::CreateEntities() {
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.1f, 0.1f, 1.f), pixelShader, vertexShader);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.1f, 1.0f, 0.1f, 1.f), pixelShader, vertexShader);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.1f, 0.1f, 1.0f, 1.f), pixelShader, vertexShader);
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\grassy\\grassy_Diffuse.png", nullptr, &diffuseTexture1);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\rock\\rock_Diffuse.png", nullptr, &diffuseTexture2);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\brick\\brick_Diffuse.png", nullptr, &diffuseTexture3);
+
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 16;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	device->CreateSamplerState(&samplerDesc, &samplerState);
+
+
+	
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture1.Get());
+	mat1->SetSpecularIntensity(0.0f);
+
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture2.Get());
+	mat1->SetSpecularIntensity(0.5f);
+
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture3.Get());
+	mat1->SetSpecularIntensity(1.0f);
+
 
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[3], mat1)));
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[4], mat3)));
-}
 
+	//follows point light
+	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
+	entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
+
+}
+void Game::CreateLights()
+{
+	directionalLight1.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	directionalLight1.intensity = 1.0f;
+	directionalLight1.direction = XMFLOAT3(1, -1, 1);
+	directionalLight1.type = 0;
+
+	directionalLight2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
+	directionalLight2.intensity = 1.0f;
+	directionalLight2.direction = XMFLOAT3(-1, -1, 1);
+	directionalLight2.type = 0;
+
+	pointLight1.color = XMFLOAT3(1, 0, 0);
+	pointLight1.intensity = 1.0f;
+	pointLight1.worldPos = XMFLOAT3(0.f, 5.f, 0.f);
+	pointLight1.type = 1;
+}
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
 // For instance, updating our projection matrix's aspect ratio.
@@ -214,6 +250,8 @@ void Game::Update(float deltaTime, float totalTime)
 		entities[i]->Update(deltaTime, totalTime);
 	}
 	camera->Update(deltaTime, this->hWnd);
+	pointLight1.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
+	entities[5]->GetTransform()->SetPosition(pointLight1.worldPos);
 }
 
 // --------------------------------------------------------
@@ -234,23 +272,22 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
+
 	pixelShader->SetData(
 		"light1", 
-		&directionalLight1, 
-		sizeof(DirectionalLight)
+		&pointLight1, 
+		sizeof(Light)
 	);
+
 
 	pixelShader->SetData(
 		"light2",
-		&directionalLight2,
-		sizeof(DirectionalLight)
+		&directionalLight1,
+		sizeof(Light)
 	);
 
-	pixelShader->SetData(
-		"light3",
-		&directionalLight3,
-		sizeof(DirectionalLight)
-	);
+
 
 	pixelShader->SetFloat3("ambientColor", ambientColor);
 

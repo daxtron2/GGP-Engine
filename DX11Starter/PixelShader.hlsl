@@ -4,20 +4,27 @@
 // - The variable names don't have to match other shaders (just the semantics)
 // - Each variable must have a semantic, which defines its usage
 
-struct DirectionalLight 
+struct Light
 {
-	float3 Color;
-	float Intensity;
-	float3 Direction;
+	float3 color;
+	float intensity;
+	float3 direction;
+	int type; //0 - directional, 1-point
+	float3 worldPos;
+	float range;
 };
 
 cbuffer LightingData : register(b0)
 {
-	DirectionalLight light1;
-	DirectionalLight light2;
-	DirectionalLight light3;
+	Light light1;
+	Light light2;
+	Light light3;
 	float3 ambientColor;
+	float specIntensity;
+	float3 cameraPosition;
 }
+Texture2D diffuseTexture	:  register	(t0);// "t" registers
+SamplerState samplerState	:  register	(s0);// "s" registers
 
 struct VertexToPixel
 {
@@ -29,6 +36,8 @@ struct VertexToPixel
 	float4 position		: SV_POSITION;
 	float4 color		: COLOR;
 	float3 normal		: NORMAL;
+	float3 worldPos		: WORLD_POSITION;
+	float2 uv			: TEXCOORD;
 };
 
 float3 Diffuse(float3 normal, float3 dirToLight)
@@ -36,12 +45,32 @@ float3 Diffuse(float3 normal, float3 dirToLight)
 	return saturate(dot(normal, dirToLight));
 }
 
-float3 CalculateLight(DirectionalLight light, float3 normal, float4 surfaceColor)
+float SpecularPhong(float3 normal, float3 dirOfLight, float3 toCam, float specularExponent)
 {
-	float3 dirToLight = normalize(-light.Direction);
+	float3 reflection = reflect(dirOfLight, normal);
+
+	float specularityAmt = saturate(dot(reflection, toCam));
+
+	return pow(specularityAmt, specularExponent);
+}
+
+float3 CalculateLight(Light light, float3 normal, float3 color, float3 worldPos, float3 toCam)
+{
+	float3 dirToLight = float3(0, 0, 0);
+	if (light.type == 0) //directional
+	{
+		dirToLight = normalize(-light.direction);
+	}
+	else if (light.type == 1) //point
+	{
+		dirToLight = normalize(light.worldPos - worldPos);
+	}
+
 	float3 diffuseAmt = Diffuse(normal, dirToLight);
 
-	return diffuseAmt * light.Color * (float3)surfaceColor;
+	float specularity = SpecularPhong(normal, -dirToLight, toCam, 128.f);
+
+	return diffuseAmt * light.color * color + specularity;
 }
 
 // --------------------------------------------------------
@@ -57,14 +86,19 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
 	
-	float3 light1Result = CalculateLight(light1, input.normal, input.color);
-	float3 light2Result = CalculateLight(light2, input.normal, input.color);
-	float3 light3Result = CalculateLight(light3, input.normal, input.color);
-	float3 finalLightResult = light1Result + light2Result + light3Result;
-	float3 ambientLightResult = (float3)ambientColor * (float3)input.color;
+	float3 surfaceColor = diffuseTexture.Sample(samplerState, input.uv).rgb;
+	
+	float3 toCam = normalize(cameraPosition - input.worldPos);
 
-	//return float4(light3Result, 1);
+	float3 light1Result = CalculateLight(light1, input.normal, surfaceColor, input.worldPos, toCam);
+	float3 light2Result = CalculateLight(light2, input.normal, surfaceColor, input.worldPos, toCam);
+	float3 light3Result = CalculateLight(light3, input.normal, surfaceColor, input.worldPos, toCam);
 
-	return float4(finalLightResult + ambientLightResult, 1);
+	float3 finalColor =
+		surfaceColor * ambientColor.rgb +
+		light1Result +
+		light2Result +
+		light3Result;
+
+	return float4(finalColor, 1);
 }
-

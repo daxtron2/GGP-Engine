@@ -1,13 +1,15 @@
 #include "Material.h"
 #include <memory>
 
-Material::Material(DirectX::XMFLOAT4 _colorTint, std::shared_ptr<SimplePixelShader>
-	_pixelShader, std::shared_ptr<SimpleVertexShader>
-	_vertexShader)
+Material::Material(std::shared_ptr<SimplePixelShader> _pixelShader, 
+				   std::shared_ptr<SimpleVertexShader> _vertexShader,
+				   ID3D11SamplerState* _samplerState,
+				   ID3D11ShaderResourceView* _texture)
 {
-	colorTint = _colorTint;
 	pixelShader = _pixelShader;
 	vertexShader = _vertexShader;
+	samplerState = _samplerState;
+	texture = _texture;
 }
 
 DirectX::XMFLOAT4 Material::GetColorTint()
@@ -28,4 +30,24 @@ std::shared_ptr<SimpleVertexShader> Material::GetVertexShader()
 void Material::SetColorTint(DirectX::XMFLOAT4 tint)
 {
 	colorTint = tint;
+}
+
+void Material::SetSpecularIntensity(float spec)
+{
+	specularIntensity = spec;
+}
+
+float Material::GetSpecularIntensity() 
+{
+	return specularIntensity;
+}
+
+ID3D11SamplerState* Material::GetSamplerState()
+{
+	return samplerState;
+}
+
+ID3D11ShaderResourceView* Material::GetTextureSRV()
+{
+	return texture;
 }

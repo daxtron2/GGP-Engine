@@ -38,6 +38,8 @@ struct VertexToPixel
 	float4 position		: SV_POSITION;	// XYZW position (System Value Position)
 	float4 color		: COLOR;        // RGBA color
 	float3 normal		: NORMAL;
+	float3 worldPos		: WORLD_POSITION;
+	float2 uv			: TEXCOORD;
 };
 
 // --------------------------------------------------------
@@ -63,7 +65,9 @@ VertexToPixel main( VertexShaderInput input )
 	matrix wvp = mul(projection, mul(view, world));
 	output.position = mul(wvp, float4(input.position, 1.0f));
 	output.color = colorTint;
-	output.normal = mul((float3x3)world, input.normal);
+	output.normal = normalize(mul((float3x3)world, input.normal));
+	output.worldPos = mul(world, float4(input.position, 1.0f)).xyz;
+	output.uv = input.uv;
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

@@ -32,6 +32,7 @@ private:
 	void LoadModels();
 	void CreateBasicGeometry();
 	void CreateEntities();
+	void CreateLights();
 
 	
 	// Note the usage of ComPtr below
@@ -48,10 +49,17 @@ private:
 
 	std::shared_ptr<Camera> camera;
 
-	DirectionalLight directionalLight1 = DirectionalLight();
-	DirectionalLight directionalLight2 = DirectionalLight();
-	DirectionalLight directionalLight3 = DirectionalLight();
+	Light directionalLight1 = Light();
+	Light directionalLight2 = Light();
+	Light pointLight1 = Light();
 
-	XMFLOAT3 ambientColor = XMFLOAT3(0.05f, 0.05f, 0.1f);
+	XMFLOAT3 ambientColor = XMFLOAT3(0.2f, 0.2f, 0.2f);
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture1;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture2;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture3;
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+
 };
 
