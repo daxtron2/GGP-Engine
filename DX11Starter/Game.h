@@ -44,6 +44,9 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 
+	std::shared_ptr<SimplePixelShader> pixelShaderNormal;
+	std::shared_ptr<SimpleVertexShader> vertexShaderNormal;
+
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::unique_ptr<Entity>> entities;
 
@@ -58,6 +61,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture1;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture2;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture3;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture1;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture2;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture3;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 

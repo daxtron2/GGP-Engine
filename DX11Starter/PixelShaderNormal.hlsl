@@ -1,7 +1,5 @@
 #include "ShaderIncludes.hlsli"
 
-
-
 cbuffer LightingData : register(b0)
 {
 	Light light1;
@@ -12,6 +10,7 @@ cbuffer LightingData : register(b0)
 	float3 cameraPosition;
 }
 Texture2D diffuseTexture	:  register	(t0);// "t" registers
+Texture2D normalMap			:  register (t1);
 SamplerState samplerState	:  register	(s0);// "s" registers
 
 // --------------------------------------------------------
@@ -23,7 +22,25 @@ SamplerState samplerState	:  register	(s0);// "s" registers
 //    "put the output of this into the current render target"
 // - Named "main" because that's the default the shader compiler looks for
 // --------------------------------------------------------
-float4 main(VertexToPixel input) : SV_TARGET
+float4 main(VertexToPixelNormalMap input) : SV_TARGET
 {
-	return float4(CalculateFinalColor(input, samplerState, diffuseTexture, cameraPosition, light1, light2, light3, ambientColor), 1);
+	float3 unpackedNormal = normalMap.Sample(samplerState, input.uv).rgb * 2 - 1;
+	float3 norm = input.normal;
+
+	float3 tan = input.tangent;
+	tan = normalize(tan - norm * dot(tan, norm));
+
+	float3 bitan = cross(tan, norm);
+	float3x3 TBN = float3x3(tan, bitan, norm);
+
+	input.normal = mul(unpackedNormal, TBN);
+
+	VertexToPixel temp;
+	temp.position = input.position;
+	temp.color = input.color;
+	temp.normal = input.normal;
+	temp.worldPos = input.worldPos;
+	temp.uv = input.uv;
+
+	return float4(CalculateFinalColor(temp, samplerState, diffuseTexture, cameraPosition, light1, light2, light3, ambientColor), 1);
 }

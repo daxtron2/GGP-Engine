@@ -28,5 +28,7 @@ public:
 
 	Mesh(const char* filename, ComPtr<ID3D11Device> device);
 
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
+
 };
 

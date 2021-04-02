@@ -87,6 +87,9 @@ void Game::LoadShaders()
 
 	vertexShader = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShader.cso").c_str());
+
+	vertexShaderNormal = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderNormal.cso").c_str());
+	pixelShaderNormal = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderNormal.cso").c_str());
 }
 
 void Game::LoadModels() 
@@ -168,9 +171,13 @@ void Game::CreateBasicGeometry()
 }
 void Game::CreateEntities() {
 
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\grassy\\grassy_Diffuse.png", nullptr, &diffuseTexture1);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\rock\\rock_Diffuse.png", nullptr, &diffuseTexture2);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\brick\\brick_Diffuse.png", nullptr, &diffuseTexture3);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -184,13 +191,15 @@ void Game::CreateEntities() {
 
 
 	
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture1.Get());
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
+																diffuseTexture1.Get(), normalTexture1.Get());
 	mat1->SetSpecularIntensity(0.0f);
 
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture2.Get());
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
+																diffuseTexture2.Get(), normalTexture2.Get());
 	mat1->SetSpecularIntensity(0.5f);
 
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture3.Get());
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture3.Get(), nullptr);
 	mat1->SetSpecularIntensity(1.0f);
 
 
@@ -292,6 +301,27 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->SetFloat3("ambientColor", ambientColor);
 
 	pixelShader->CopyAllBufferData();
+
+	pixelShaderNormal->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
+
+	pixelShaderNormal->SetData(
+		"light1",
+		&pointLight1,
+		sizeof(Light)
+	);
+
+
+	pixelShaderNormal->SetData(
+		"light2",
+		&directionalLight1,
+		sizeof(Light)
+	);
+
+
+
+	pixelShaderNormal->SetFloat3("ambientColor", ambientColor);
+
+	pixelShaderNormal->CopyAllBufferData();
 
 	for (int i = 0; i < entities.size(); i++)
 	{

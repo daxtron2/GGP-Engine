@@ -45,6 +45,11 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* c
 	ps->SetSamplerState("samplerState", material->GetSamplerState());
 	ps->SetShaderResourceView("diffuseTexture", material->GetTextureSRV());
 
+	if (material->HasNormalMap()) 
+	{
+		ps->SetShaderResourceView("normalMap", material->GetNormalMap());
+	}
+
 	material->GetVertexShader()->SetShader();
 	material->GetPixelShader()->SetShader();
 
