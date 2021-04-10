@@ -9,6 +9,7 @@
 #include <memory>
 #include "Camera.h"
 #include "Lights.h"
+#include "Sky.h"
 
 class Game 
 	: public DXCore
@@ -30,9 +31,12 @@ private:
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
 	void LoadModels();
+	void LoadTextures();
 	void CreateBasicGeometry();
 	void CreateEntities();
 	void CreateLights();
+	void CreateSkyBox();
+
 
 	
 	// Note the usage of ComPtr below
@@ -47,10 +51,14 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShaderNormal;
 	std::shared_ptr<SimpleVertexShader> vertexShaderNormal;
 
+	std::shared_ptr<SimplePixelShader> pixelShaderSky;
+	std::shared_ptr<SimpleVertexShader> vertexShaderSky;
+
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::unique_ptr<Entity>> entities;
 
 	std::shared_ptr<Camera> camera;
+	std::shared_ptr<Sky> skybox;
 
 	Light directionalLight1 = Light();
 	Light directionalLight2 = Light();
@@ -65,6 +73,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture1;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture2;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture3;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skyTexture;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 

@@ -2,6 +2,7 @@
 #include "Vertex.h"
 #include "Material.h"
 #include "WICTextureLoader.h"
+#include "DDSTextureLoader.h"
 
 
 // Needed for a helper function to read compiled shader files from the hard drive
@@ -61,8 +62,10 @@ void Game::Init()
 	LoadShaders();
 	//CreateBasicGeometry();
 	LoadModels();
+	LoadTextures();
 	CreateEntities();
 	CreateLights();
+	CreateSkyBox();
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -90,6 +93,9 @@ void Game::LoadShaders()
 
 	vertexShaderNormal = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderNormal.cso").c_str());
 	pixelShaderNormal = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderNormal.cso").c_str());
+
+	vertexShaderSky = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderSky.cso").c_str());
+	pixelShaderSky = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderSky.cso").c_str());
 }
 
 void Game::LoadModels() 
@@ -99,6 +105,19 @@ void Game::LoadModels()
 	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/torus.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cylinder.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/helix.obj").c_str(), device));
+}
+
+void Game::LoadTextures()
+{
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
+	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
+
+	CreateDDSTextureFromFile(device.Get(), L".\\Assets\\Textures\\Skies\\SunnyCubeMap.dds", nullptr, &skyTexture);
 }
 
 // --------------------------------------------------------
@@ -171,13 +190,7 @@ void Game::CreateBasicGeometry()
 }
 void Game::CreateEntities() {
 
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
 
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -230,6 +243,15 @@ void Game::CreateLights()
 	pointLight1.intensity = 1.0f;
 	pointLight1.worldPos = XMFLOAT3(0.f, 5.f, 0.f);
 	pointLight1.type = 1;
+}
+void Game::CreateSkyBox()
+{
+	skybox = std::make_shared<Sky>(meshes[1],
+		samplerState,
+		pixelShaderSky,
+		vertexShaderSky,
+		skyTexture,
+		device);
 }
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
@@ -328,6 +350,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		entities[i]->Draw(context, camera.get());		
 	}
 
+	skybox->Draw(context, camera.get());
 
 
 	// Present the back buffer to the user
