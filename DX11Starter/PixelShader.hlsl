@@ -11,7 +11,10 @@ cbuffer LightingData : register(b0)
 	float specIntensity;
 	float3 cameraPosition;
 }
-Texture2D diffuseTexture	:  register	(t0);// "t" registers
+Texture2D albedoTexture		: register (t0);// "t" registers
+Texture2D normalMap			: register (t1);
+Texture2D roughnessMap		: register (t2);
+Texture2D metalnessMap		: register (t3);
 SamplerState samplerState	:  register	(s0);// "s" registers
 
 // --------------------------------------------------------
@@ -25,5 +28,6 @@ SamplerState samplerState	:  register	(s0);// "s" registers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	return float4(CalculateFinalColor(input, samplerState, diffuseTexture, cameraPosition, light1, light2, light3, ambientColor), 1);
+	float3 finalColor = CalculateFinalColor(input, samplerState, albedoTexture, roughnessMap, metalnessMap, cameraPosition, light1, light2, light3, ambientColor);
+	return float4(finalColor, 1);
 }

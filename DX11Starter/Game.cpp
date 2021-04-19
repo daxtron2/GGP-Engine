@@ -109,13 +109,13 @@ void Game::LoadModels()
 
 void Game::LoadTextures()
 {
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
 
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
-	CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
+	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
 
 	CreateDDSTextureFromFile(device.Get(), L".\\Assets\\Textures\\Skies\\SunnyCubeMap.dds", nullptr, &skyTexture);
 }
@@ -205,15 +205,16 @@ void Game::CreateEntities() {
 
 	
 	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
-																diffuseTexture1.Get(), normalTexture1.Get());
+																L".\\Assets\\Textures\\PBR\\floor", device, context);
 	mat1->SetSpecularIntensity(0.0f);
 
 	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
-																diffuseTexture2.Get(), normalTexture2.Get());
-	mat1->SetSpecularIntensity(0.5f);
+																L".\\Assets\\Textures\\PBR\\cobblestone", device, context);
+	mat2->SetSpecularIntensity(0.5f);
 
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), diffuseTexture3.Get(), nullptr);
-	mat1->SetSpecularIntensity(1.0f);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), 
+																L".\\Assets\\Textures\\PBR\\scratched", device, context);
+	mat3->SetSpecularIntensity(1.0f);
 
 
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));

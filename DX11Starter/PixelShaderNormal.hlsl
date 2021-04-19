@@ -9,9 +9,12 @@ cbuffer LightingData : register(b0)
 	float specIntensity;
 	float3 cameraPosition;
 }
-Texture2D diffuseTexture	:  register	(t0);// "t" registers
-Texture2D normalMap			:  register (t1);
-SamplerState samplerState	:  register	(s0);// "s" registers
+
+Texture2D albedoTexture		: register (t0);// "t" registers
+Texture2D normalMap			: register (t1);
+Texture2D roughnessMap		: register (t2);
+Texture2D metalnessMap		: register (t3);
+SamplerState samplerState	: register (s0);// "s" registers
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -42,5 +45,5 @@ float4 main(VertexToPixelNormalMap input) : SV_TARGET
 	temp.worldPos = input.worldPos;
 	temp.uv = input.uv;
 
-	return float4(CalculateFinalColor(temp, samplerState, diffuseTexture, cameraPosition, light1, light2, light3, ambientColor), 1);
+	return float4(CalculateFinalColor(temp, samplerState, albedoTexture, roughnessMap, metalnessMap, cameraPosition, light1, light2, light3, ambientColor), 1);
 }

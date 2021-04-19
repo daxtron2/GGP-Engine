@@ -43,12 +43,15 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* c
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
 	ps->SetFloat("specIntensity", material->GetSpecularIntensity());
 	ps->SetSamplerState("samplerState", material->GetSamplerState());
-	ps->SetShaderResourceView("diffuseTexture", material->GetTextureSRV());
+	ps->SetShaderResourceView("albedoTexture", material->GetTextureSRV().Get());
 
 	if (material->HasNormalMap()) 
 	{
-		ps->SetShaderResourceView("normalMap", material->GetNormalMap());
+		ps->SetShaderResourceView("normalMap", material->GetNormalMap().Get());
 	}
+
+	ps->SetShaderResourceView("roughnessMap", material->GetRoughnessMap().Get());
+	ps->SetShaderResourceView("metalnessMap", material->GetMetalnessMap().Get());
 
 	material->GetVertexShader()->SetShader();
 	material->GetPixelShader()->SetShader();

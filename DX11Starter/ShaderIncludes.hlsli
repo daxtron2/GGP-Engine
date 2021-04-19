@@ -1,6 +1,10 @@
 #ifndef __GGP_SHADER_INCLUDES__
 #define __GGP_SHADER_INCLUDES__
 
+#include "PBRIncludes.hlsli"
+
+
+
 // Struct representing a single vertex worth of data
 // - This should match the vertex definition in our C++ code
 // - By "match", I mean the size, order and number of members
@@ -95,8 +99,6 @@ VertexToPixelNormalMap CalculateVertexToPixelNormalMap(VertexShaderInput input, 
 	return output;
 }
 
-
-
 struct Light
 {
 	float3 color;
@@ -107,7 +109,7 @@ struct Light
 	float range;
 };
 
-float3 Diffuse(float3 normal, float3 dirToLight)
+float Diffuse(float3 normal, float3 dirToLight)
 {
 	return saturate(dot(normal, dirToLight));
 }
@@ -121,7 +123,7 @@ float SpecularPhong(float3 normal, float3 dirOfLight, float3 toCam, float specul
 	return pow(specularityAmt, specularExponent);
 }
 
-float3 CalculateLight(Light light, float3 normal, float3 color, float3 worldPos, float3 toCam)
+float3 CalculateLight(Light light, float3 normal, float3 surfaceColor, float3 worldPos, float3 toCam, float roughness, float metalness, float3 specColor)
 {
 	float3 dirToLight = float3(0, 0, 0);
 	if (light.type == 0) //directional
@@ -133,28 +135,43 @@ float3 CalculateLight(Light light, float3 normal, float3 color, float3 worldPos,
 		dirToLight = normalize(light.worldPos - worldPos);
 	}
 
-	float3 diffuseAmt = Diffuse(normal, dirToLight);
+	float diffuseAmt = Diffuse(normal, dirToLight);
 
-	float specularity = SpecularPhong(normal, -dirToLight, toCam, 128.f);
+	//old phong specularity
+	//float specularity = SpecularPhong(normal, -dirToLight, toCam, 128.f);
+
+	//new pbr specularity
+	float3 specularity = MicrofacetBRDF(normal, dirToLight, toCam, roughness, metalness, specColor);
 
 	specularity *= any(diffuseAmt);
 
-	return diffuseAmt * light.color * color + specularity;
+	float3 balancedDiff = DiffuseEnergyConserve(diffuseAmt, specularity, metalness);
+
+	return (balancedDiff * surfaceColor + specularity) * light.intensity * light.color;
 }
 
 
-float3 CalculateFinalColor(VertexToPixel input, SamplerState samplerState, Texture2D diffuseTexture, 
+float3 CalculateFinalColor(VertexToPixel input, SamplerState samplerState, Texture2D albedoTexture, Texture2D roughnessMap, Texture2D metalnessMap,
 						   float3 cameraPosition, Light light1, Light light2, Light light3, float3 ambientColor)
 {
 	input.normal = normalize(input.normal);
 
-	float3 surfaceColor = diffuseTexture.Sample(samplerState, input.uv).rgb;
+	float3 surfaceColor = pow(albedoTexture.Sample(samplerState, input.uv).rgb, 2.2f);
+	float roughness = roughnessMap.Sample(samplerState, input.uv).r;
+	float metalness = metalnessMap.Sample(samplerState, input.uv).r;
+	float3 specularColor = lerp(F0_NON_METAL.rrr, surfaceColor.rgb, metalness);
+
 
 	float3 toCam = normalize(cameraPosition - input.worldPos);
 
-	return surfaceColor * ambientColor.rgb +
-			CalculateLight(light1, input.normal, surfaceColor, input.worldPos, toCam) +
-			CalculateLight(light2, input.normal, surfaceColor, input.worldPos, toCam) +
-			CalculateLight(light3, input.normal, surfaceColor, input.worldPos, toCam);
+	float3 finalColor = surfaceColor * ambientColor.rgb +
+			CalculateLight(light1, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
+			CalculateLight(light2, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
+			CalculateLight(light3, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor);
+
+	//apply gamma correction
+	return pow(finalColor, 1.0f / 2.2f);
 }
+
+
 #endif

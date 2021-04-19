@@ -66,13 +66,6 @@ private:
 
 	XMFLOAT3 ambientColor = XMFLOAT3(0.2f, 0.2f, 0.2f);
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture1;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture2;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> diffuseTexture3;
-
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture1;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture2;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalTexture3;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skyTexture;
 

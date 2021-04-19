@@ -1,16 +1,26 @@
 #include "Material.h"
 #include <memory>
+#include "WICTextureLoader.h"
 
 Material::Material(std::shared_ptr<SimplePixelShader> _pixelShader, 
 				   std::shared_ptr<SimpleVertexShader> _vertexShader,
 				   ID3D11SamplerState* _samplerState,
-				   ID3D11ShaderResourceView* _texture, ID3D11ShaderResourceView* _normalMap = nullptr)
+				   std::wstring texturePath,
+				   Microsoft::WRL::ComPtr < ID3D11Device> device,
+				   Microsoft::WRL::ComPtr < ID3D11DeviceContext> context)
 {
 	pixelShader = _pixelShader;
 	vertexShader = _vertexShader;
 	samplerState = _samplerState;
-	texture = _texture;
-	normalMap = _normalMap;
+
+
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), (texturePath + L"_albedo.png").c_str(), nullptr, &texture);
+
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), (texturePath + L"_normals.png").c_str(), nullptr, &normalMap);
+
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), (texturePath + L"_roughness.png").c_str(), nullptr, &roughnessMap);
+
+	DirectX::CreateWICTextureFromFile(device.Get(), context.Get(), (texturePath + L"_metalness.png").c_str(), nullptr, &metalnessMap);
 }
 
 DirectX::XMFLOAT4 Material::GetColorTint()
@@ -53,12 +63,22 @@ ID3D11SamplerState* Material::GetSamplerState()
 	return samplerState;
 }
 
-ID3D11ShaderResourceView* Material::GetTextureSRV()
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetTextureSRV()
 {
 	return texture;
 }
 
-ID3D11ShaderResourceView* Material::GetNormalMap()
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetNormalMap()
 {
 	return normalMap;
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetRoughnessMap()
+{
+	return roughnessMap;
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetMetalnessMap()
+{
+	return metalnessMap;
 }
