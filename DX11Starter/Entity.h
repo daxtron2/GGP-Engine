@@ -7,19 +7,19 @@
 
 class Entity
 {
-private:
+protected:
 	Transform transform;
 	std::shared_ptr<Mesh> mesh;
 	std::shared_ptr<Material> material;
 
 public:
-	Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> material);
+	Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material);
 	~Entity();
 
 	std::shared_ptr<Mesh> GetMesh();
 	Transform* GetTransform();
 
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera);
-	void Update(float deltaTime, float totalTime);
+	virtual void Update(float deltaTime, float totalTime);
 };
 

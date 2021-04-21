@@ -1,4 +1,5 @@
 #include "Entity.h"
+#include <iostream>
 
 Entity::Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material)
 {
@@ -23,14 +24,6 @@ Transform* Entity::GetTransform()
 {
 	return &transform;
 }
-void Entity::Update(float deltaTime, float totalTime) 
-{
-	//XMFLOAT3 pos = transform.GetPosition();
-	//transform.SetPosition(pos.x, sinf(totalTime), pos.z);
-	//transform.Rotate(0, 0, 1 * deltaTime);
-	//transform.SetScale(sinf(totalTime) + 1.5f, sinf(totalTime) + 1.5f, 1);
-}
-
 
 void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera)
 {
@@ -81,4 +74,10 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* c
 		mesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
 		0,     // Offset to the first index we want to use
 		0);    // Offset to add to each index when looking up vertices
+}
+
+void Entity::Update(float deltaTime, float totalTime)
+{
+	//std::cout << "yate" << std::endl;
+
 }

@@ -83,8 +83,33 @@ DirectX::XMFLOAT3 Transform::GetForward()
 	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
 
 	XMFLOAT3 forward;
-	XMStoreFloat3(&forward, XMVector3Rotate(XMVectorSet(0, 0, 1, 0), absoluteRotation));
+	XMStoreFloat3(&forward, XMVector3Normalize(XMVector3Rotate(XMVectorSet(0, 0, 1, 0), absoluteRotation)));
 	return forward;
+}
+
+DirectX::XMFLOAT3 Transform::GetXZForward()
+{
+	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(0, eulerRotation.y, eulerRotation.z);
+
+	XMFLOAT3 forward;
+	XMStoreFloat3(&forward, XMVector3Normalize(XMVector3Rotate(XMVectorSet(0, 0, 1, 0), absoluteRotation)));
+	return forward;
+}
+
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
+	XMFLOAT3 right;
+	XMStoreFloat3(&right, XMVector3Normalize(XMVector3Rotate(XMVectorSet(1, 0, 0, 0), absoluteRotation)));
+	return right;
+}
+
+DirectX::XMFLOAT3 Transform::GetXZRight()
+{
+	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(0, eulerRotation.y, eulerRotation.z);
+	XMFLOAT3 right;
+	XMStoreFloat3(&right, XMVector3Normalize(XMVector3Rotate(XMVectorSet(1, 0, 0, 0), absoluteRotation)));
+	return right;
 }
 
 void Transform::MoveAbsolute(float x, float y, float z)
@@ -103,6 +128,15 @@ void Transform::MoveRelative(float x, float y, float z)
 
 	XMVECTOR pos = XMLoadFloat3(&position);
 	pos += rotatedMove;
+	XMStoreFloat3(&position, pos);
+	transformDirty = true;
+}
+
+void Transform::MoveAlong(XMFLOAT3 direction, float speed)
+{
+	XMVECTOR moveVector = XMVectorSet(direction.x * speed, direction.y * speed, direction.z * speed, 0);
+	XMVECTOR pos = XMLoadFloat3(&position);
+	pos += moveVector;
 	XMStoreFloat3(&position, pos);
 	transformDirty = true;
 }

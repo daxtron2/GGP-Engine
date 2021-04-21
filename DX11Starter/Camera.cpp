@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <math.h>
+#include <iostream>
 using namespace DirectX;
 
 Camera::Camera()
@@ -11,8 +12,8 @@ Camera::Camera()
 	fieldOfView = 60.f;
 	nearPlane = 0.01f;
 	farPlane = 1000.f;
-	movementSpeed = 1.f;
 	mouseLookSpeed = 1.f;
+	orbitDistance = 3.f;
 
 	UpdateViewMatrix();
 	UpdateProjectionMatrix(1.f);
@@ -20,7 +21,7 @@ Camera::Camera()
 
 Camera::Camera(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation,
 			   float aspectRatio, float _fieldOfView, float _nearPlane, 
-			   float _farPlane, float _movementSpeed, float _mouseLookSpeed)
+			   float _farPlane, float _mouseLookSpeed)
 {
 	transform = Transform();
 	transform.SetRotation(rotation);
@@ -29,8 +30,9 @@ Camera::Camera(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 rotation,
 	fieldOfView = _fieldOfView;
 	nearPlane = _nearPlane;
 	farPlane = _farPlane;
-	movementSpeed = _movementSpeed;
 	mouseLookSpeed = _mouseLookSpeed;
+	orbitDistance = 3.f;
+
 
 	UpdateViewMatrix();
 	UpdateProjectionMatrix(aspectRatio);
@@ -51,6 +53,11 @@ Transform* Camera::GetTransform()
 	return &transform;
 }
 
+void Camera::SetFollowTransform(Transform* _transform)
+{
+	followTransform = _transform;
+}
+
 void Camera::UpdateViewMatrix()
 {
 	XMFLOAT3 tPos = transform.GetPosition();
@@ -69,49 +76,48 @@ void Camera::UpdateProjectionMatrix(float aspectRatio)
 }
 
 void Camera::Update(float deltaTime, HWND windowHandle)
-{
-	float speed = (GetAsyncKeyState(VK_SHIFT) & 0x8000 ? movementSpeed * 2 : movementSpeed) * deltaTime;
-	
-	if (GetAsyncKeyState('W') & 0x8000) 
-	{
-		transform.MoveRelative(0, 0, speed);
-	}
-	if (GetAsyncKeyState('A') & 0x8000)
-	{
-		transform.MoveRelative(-speed, 0, 0);
-	}
-	if (GetAsyncKeyState('S') & 0x8000)
-	{
-		transform.MoveRelative(0, 0, -speed);
-	}
-	if (GetAsyncKeyState('D') & 0x8000)
-	{
-		transform.MoveRelative(speed, 0, 0);
-	}
-	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-	{
-		transform.MoveRelative(0, speed, 0);
-	}
-	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
-	{
-		transform.MoveRelative(0, -speed, 0);
-	}
-	
-
+{	
 	POINT mousePos = {};
 	GetCursorPos(&mousePos);
 	ScreenToClient(windowHandle, &mousePos);
-
-	if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) 
+	if(Input->GetKey(VK_LBUTTON))
 	{
 		float xDiff = (float)mousePos.x - lastMousePosition.x;
 		float yDiff = (float)mousePos.y - lastMousePosition.y;
 		xDiff *= mouseLookSpeed * deltaTime;
 		yDiff *= mouseLookSpeed * deltaTime;
 
+		float currentPitch = transform.GetEulerRotation().x;
+		if (currentPitch + yDiff > 1.5f || currentPitch + yDiff < -1.5f) 
+		{
+			yDiff = 0.f;
+		}
 		transform.Rotate(yDiff, xDiff, 0);
+		
+	}
+	if (Input->GetKeyDown(VK_ADD) && orbitDistance > 0.0f) 
+	{
+		orbitDistance--;
+	}
+	if (Input->GetKeyDown(VK_SUBTRACT) && orbitDistance < 10.0f)
+	{
+		orbitDistance++;
 	}
 
-	UpdateViewMatrix();
+	if (followTransform != nullptr)
+	{
+		XMFLOAT3 ftPos = followTransform->GetPosition();
+		XMVECTOR ftPosVec = XMLoadFloat3(&ftPos);
+
+		XMFLOAT3 thisFwd = transform.GetForward();
+		XMVECTOR thisFwdVec = XMLoadFloat3(&thisFwd);
+		thisFwdVec = XMVectorScale(thisFwdVec, orbitDistance);
+
+		XMFLOAT3 newPos;
+		XMStoreFloat3(&newPos, XMVectorSubtract(ftPosVec, thisFwdVec));
+		transform.SetPosition(newPos);
+	}
+
 	lastMousePosition = mousePos;
+	UpdateViewMatrix();
 }

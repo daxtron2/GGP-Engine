@@ -4,6 +4,7 @@
 #include "WICTextureLoader.h"
 #include "DDSTextureLoader.h"
 #include "Skybox.h"
+#include "ControllableEntity.h"
 
 // Needed for a helper function to read compiled shader files from the hard drive
 #pragma comment(lib, "d3dcompiler.lib")
@@ -63,6 +64,7 @@ void Game::Init()
 	//CreateBasicGeometry();
 	LoadModels();
 	LoadTextures();
+	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f);
 	CreateEntities();
 	CreateLights();
 	CreateSkyBox();
@@ -81,8 +83,6 @@ void Game::Init()
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	
-	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f, 1.f);
 	
 
 }
@@ -305,15 +305,12 @@ void Game::CreateEntities() {
 	
 	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
 																L".\\Assets\\Textures\\PBR\\floor", device, context);
-	mat1->SetSpecularIntensity(0.0f);
 
 	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
 																L".\\Assets\\Textures\\PBR\\cobblestone", device, context);
-	mat2->SetSpecularIntensity(0.5f);
 
 	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), 
 																L".\\Assets\\Textures\\PBR\\scratched", device, context);
-	mat3->SetSpecularIntensity(1.0f);
 
 
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
@@ -325,6 +322,10 @@ void Game::CreateEntities() {
 	//follows point light
 	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
 	entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
+
+	entities.push_back(std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get()));
+
+	camera->SetFollowTransform(entities[6]->GetTransform());
 
 }
 void Game::CreateLights()

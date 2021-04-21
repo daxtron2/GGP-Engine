@@ -24,9 +24,14 @@ public:
 	DirectX::XMFLOAT3 GetScale();
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
 	DirectX::XMFLOAT3 GetForward();
+	DirectX::XMFLOAT3 GetXZForward();
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetXZRight();
+
 
 	void MoveAbsolute(float x, float y, float z);
 	void MoveRelative(float x, float y, float z);
+	void MoveAlong(DirectX::XMFLOAT3 direction, float speed);
 	void Rotate(float pitch, float yaw, float roll);
 	void Scale(float x, float y, float z);
 
