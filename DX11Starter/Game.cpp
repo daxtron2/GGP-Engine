@@ -330,20 +330,21 @@ void Game::CreateEntities() {
 }
 void Game::CreateLights()
 {
-	directionalLight1.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	directionalLight1.intensity = 1.0f;
-	directionalLight1.direction = XMFLOAT3(1, -1, 1);
-	directionalLight1.type = 0;
+	light1.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	light1.intensity = 1.0f;
+	light1.direction = XMFLOAT3(1, -1, 1);
+	light1.type = 0;//directional
+	
+	light2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
+	light2.intensity = 1.0f;
+	light2.direction = XMFLOAT3(-1, -1, 1);
+	light2.type = 1;//point
 
-	directionalLight2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
-	directionalLight2.intensity = 1.0f;
-	directionalLight2.direction = XMFLOAT3(-1, -1, 1);
-	directionalLight2.type = 0;
-
-	pointLight1.color = XMFLOAT3(1, 0, 0);
-	pointLight1.intensity = 1.0f;
-	pointLight1.worldPos = XMFLOAT3(0.f, 5.f, 0.f);
-	pointLight1.type = 1;
+	light3.color = XMFLOAT3(1, 0, 0);
+	light3.intensity = 1.0f;
+	light3.worldPos = XMFLOAT3(0.f, 5.f, 0.f);
+	light3.direction = XMFLOAT3(0, -1, 0);
+	light3.type = 2;//spot
 }
 void Game::CreateSkyBox()
 {
@@ -535,8 +536,10 @@ void Game::Update(float deltaTime, float totalTime)
 		entities[i]->Update(deltaTime, totalTime);
 	}
 	camera->Update(deltaTime, this->hWnd);
-	pointLight1.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
-	entities[5]->GetTransform()->SetPosition(pointLight1.worldPos);
+	
+	//orbiting point light
+	light2.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
+	entities[5]->GetTransform()->SetPosition(light2.worldPos);
 }
 
 // --------------------------------------------------------
@@ -571,18 +574,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Render the scene to the post process RTV
 	pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 
-	pixelShader->SetData(
-		"light1", 
-		&pointLight1, 
-		sizeof(Light)
-	);
+	pixelShader->SetData("light1", &light1, sizeof(Light));
+	pixelShader->SetData("light2", &light2, sizeof(Light));
+	pixelShader->SetData("light3", &light3, sizeof(Light));
 
-
-	pixelShader->SetData(
-		"light2",
-		&directionalLight1,
-		sizeof(Light)
-	);
 
 
 
@@ -592,18 +587,10 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	pixelShaderNormal->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 
-	pixelShaderNormal->SetData(
-		"light1",
-		&pointLight1,
-		sizeof(Light)
-	);
+	pixelShaderNormal->SetData("light1", &light1, sizeof(Light));
+	pixelShaderNormal->SetData("light2", &light2, sizeof(Light));
+	pixelShaderNormal->SetData("light3", &light3, sizeof(Light));
 
-
-	pixelShaderNormal->SetData(
-		"light2",
-		&directionalLight1,
-		sizeof(Light)
-	);
 
 
 

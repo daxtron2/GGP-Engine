@@ -76,9 +76,9 @@ private:
 	std::shared_ptr<Camera> camera;
 	std::shared_ptr<Skybox> skybox;
 
-	Light directionalLight1 = Light();
-	Light directionalLight2 = Light();
-	Light pointLight1 = Light();
+	Light light1 = Light();
+	Light light2 = Light();
+	Light light3 = Light();
 
 	XMFLOAT3 ambientColor = XMFLOAT3(0.2f, 0.2f, 0.2f);
 
