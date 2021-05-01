@@ -313,19 +313,23 @@ void Game::CreateEntities() {
 																L".\\Assets\\Textures\\PBR\\scratched", device, context);
 
 
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[3], mat1)));
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[4], mat3)));
+	//creates test scene
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[3], mat1)));
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[4], mat3)));
 
-	//follows point light
-	entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
-	entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
+	////follows point light
+	//entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
+	//entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
 
+	//create a controllable player entity and attach the camera to it
 	entities.push_back(std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get()));
+	camera->SetFollowTransform(entities.back()->GetTransform());
 
-	camera->SetFollowTransform(entities[6]->GetTransform());
+	entities.push_back(std::make_unique<Asteroid>)
+
 
 }
 void Game::CreateLights()
@@ -538,8 +542,8 @@ void Game::Update(float deltaTime, float totalTime)
 	camera->Update(deltaTime, this->hWnd);
 	
 	//orbiting point light
-	light2.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
-	entities[5]->GetTransform()->SetPosition(light2.worldPos);
+	//light2.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
+	//entities[5]->GetTransform()->SetPosition(light2.worldPos);
 }
 
 // --------------------------------------------------------

@@ -4,60 +4,59 @@ using namespace DirectX;
 Transform::Transform()
 {
 	transformDirty = true;
-	position = XMFLOAT3(0, 0, 0);
-	scale = XMFLOAT3(1, 1, 1);
-	eulerRotation = XMFLOAT3(0, 0, 0);
+	position = Vector3(0, 0, 0);
+	scale = Vector3(1, 1, 1);
+	eulerRotation = Vector3(0, 0, 0);
 	XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
 }
 
 void Transform::SetPosition(float x, float y, float z)
 {
-	XMStoreFloat3(&position, XMVectorSet(x, y, z, 0));
+	position.Set(x,y,z);
 	transformDirty = true;
 }
 
 void Transform::SetRotation(float pitch, float yaw, float roll)
 {
-	XMStoreFloat3(&eulerRotation, XMVectorSet(pitch, yaw, roll, 0));
+	eulerRotation.Set(pitch, yaw, roll);
 	transformDirty = true;
 }
 
 void Transform::SetScale(float x, float y, float z)
 {
-	XMStoreFloat3(&scale, XMVectorSet(x, y, z, 0));
+	scale.Set(x, y, z);
 	transformDirty = true;
 }
 
-void Transform::SetPosition(XMFLOAT3 pos)
+void Transform::SetPosition(Vector3 pos)
 {
-	
-	XMStoreFloat3(&position, XMLoadFloat3(&pos));
+	position = pos;
 	transformDirty = true;
 }
 
-void Transform::SetRotation(XMFLOAT3 rot)
+void Transform::SetRotation(Vector3 rot)
 {
-	XMStoreFloat3(&eulerRotation, XMLoadFloat3(&rot));
+	eulerRotation = rot;
 	transformDirty = true;
 }
 
-void Transform::SetScale(XMFLOAT3 sca)
+void Transform::SetScale(Vector3 sca)
 {
-	XMStoreFloat3(&scale, XMLoadFloat3(&sca));
+	scale = sca;
 	transformDirty = true;
 }
 
-DirectX::XMFLOAT3 Transform::GetPosition()
+Vector3 Transform::GetPosition()
 {
 	return position;
 }
 
-DirectX::XMFLOAT3 Transform::GetEulerRotation()
+Vector3 Transform::GetEulerRotation()
 {
 	return eulerRotation;
 }
 
-DirectX::XMFLOAT3 Transform::GetScale()
+Vector3 Transform::GetScale()
 {
 	return scale;
 }
@@ -78,61 +77,54 @@ DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()
 	return worldMatrix;
 }
 
-DirectX::XMFLOAT3 Transform::GetForward()
+Vector3 Transform::GetForward()
 {
-	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
-
-	XMFLOAT3 forward;
-	XMStoreFloat3(&forward, XMVector3Normalize(XMVector3Rotate(XMVectorSet(0, 0, 1, 0), absoluteRotation)));
+	Vector3 forward(0, 0, 1);
+	forward.Rotate(eulerRotation);
+	forward.Normalize();
 	return forward;
 }
 
-DirectX::XMFLOAT3 Transform::GetXZForward()
+Vector3 Transform::GetXZForward()
 {
-	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(0, eulerRotation.y, eulerRotation.z);
-
-	XMFLOAT3 forward;
-	XMStoreFloat3(&forward, XMVector3Normalize(XMVector3Rotate(XMVectorSet(0, 0, 1, 0), absoluteRotation)));
+	Vector3 forward(0, 0, 1);
+	forward.Rotate(0, eulerRotation.Y(), eulerRotation.Z());
+	forward.Normalize();
 	return forward;
 }
 
-DirectX::XMFLOAT3 Transform::GetRight()
+Vector3 Transform::GetRight()
 {
-	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
-	XMFLOAT3 right;
-	XMStoreFloat3(&right, XMVector3Normalize(XMVector3Rotate(XMVectorSet(1, 0, 0, 0), absoluteRotation)));
+	Vector3 right(1, 0, 0);
+	right.Rotate(eulerRotation);
+	right.Normalize();
 	return right;
 }
 
-DirectX::XMFLOAT3 Transform::GetXZRight()
+Vector3 Transform::GetXZRight()
 {
-	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(0, eulerRotation.y, eulerRotation.z);
-	XMFLOAT3 right;
-	XMStoreFloat3(&right, XMVector3Normalize(XMVector3Rotate(XMVectorSet(1, 0, 0, 0), absoluteRotation)));
+	Vector3 right(1, 0, 0);
+	right.Rotate(0, eulerRotation.Y(), eulerRotation.Z());
+	right.Normalize();
 	return right;
 }
 
 void Transform::MoveAbsolute(float x, float y, float z)
 {
-	XMVECTOR pos = XMLoadFloat3(&position);
-	pos += XMVectorSet(x, y, z, 0);
-	XMStoreFloat3(&position, pos);
+	position = position + Vector3(x, y, z);
 	transformDirty = true;
 }
 
 void Transform::MoveRelative(float x, float y, float z)
 {
-	XMVECTOR moveVector = XMVectorSet(x, y, z, 0);
-	XMVECTOR absoluteRotation = XMQuaternionRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
-	XMVECTOR rotatedMove = XMVector3Rotate(moveVector, absoluteRotation);
+	Vector3 moveVector(x, y, z);
+	moveVector.Rotate(eulerRotation);
 
-	XMVECTOR pos = XMLoadFloat3(&position);
-	pos += rotatedMove;
-	XMStoreFloat3(&position, pos);
+	position = position + moveVector;
 	transformDirty = true;
 }
 
-void Transform::MoveAlong(XMFLOAT3 direction, float speed)
+void Transform::MoveAlong(Vector3 direction, float speed)
 {
 	XMVECTOR moveVector = XMVectorSet(direction.x * speed, direction.y * speed, direction.z * speed, 0);
 	XMVECTOR pos = XMLoadFloat3(&position);
