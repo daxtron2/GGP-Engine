@@ -1,18 +1,28 @@
 #include "Entity.h"
 #include <iostream>
 
+Entity::Entity()
+{
+	material = nullptr;
+	mesh = nullptr;
+	collider = new SphereCollider(&transform, .5f);
+}
+
 Entity::Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material)
 {
 	material = _material;
 	mesh = _mesh;
-	float randX = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
-	float randZ = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+	collider = new SphereCollider(&transform, .5f);
 
-	transform.SetPosition(randX, 0, 0);
+	//float randX = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+	//float randZ = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+
+	//transform.SetPosition(randX, 0, 0);
 }
 
 Entity::~Entity()
 {
+	delete collider;
 }
 
 std::shared_ptr<Mesh> Entity::GetMesh()
@@ -23,6 +33,26 @@ std::shared_ptr<Mesh> Entity::GetMesh()
 Transform* Entity::GetTransform()
 {
 	return &transform;
+}
+
+SphereCollider* Entity::GetCollider()
+{
+	return collider;
+}
+
+Material* Entity::GetMaterial()
+{
+	return material.get();
+}
+
+void Entity::SetMesh(std::shared_ptr<Mesh> _mesh)
+{
+	mesh = _mesh;
+}
+
+void Entity::SetMaterial(std::shared_ptr<Material> _material)
+{
+	material = _material;
 }
 
 void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera)

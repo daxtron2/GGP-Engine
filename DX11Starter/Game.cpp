@@ -5,10 +5,12 @@
 #include "DDSTextureLoader.h"
 #include "Skybox.h"
 #include "ControllableEntity.h"
+#include <ctime>
 
 // Needed for a helper function to read compiled shader files from the hard drive
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
+#include "Asteroid.h"
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -57,6 +59,7 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
+	srand(time(NULL));
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
@@ -324,13 +327,20 @@ void Game::CreateEntities() {
 	//entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
 	//entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
 
+
 	//create a controllable player entity and attach the camera to it
 	entities.push_back(std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get()));
 	camera->SetFollowTransform(entities.back()->GetTransform());
 
-	entities.push_back(std::make_unique<Asteroid>)
+	//pool 10 asteroid entities
+	for (int i = 0; i < 10; i++) 
+	{
+		entities.push_back(std::make_unique<Asteroid>(meshes[0], mat2));
 
+		Asteroid* asteroid = (Asteroid*)entities.back().get();
 
+		((ControllableEntity*)entities[0].get())->AddAsteroid(asteroid);
+	}
 }
 void Game::CreateLights()
 {
@@ -564,6 +574,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	
 	// Clear the post-process textures as well
 	context->ClearRenderTargetView(postProcessRTV.Get(), color);
 	context->ClearRenderTargetView(bloomExtractRTV.Get(), color);
@@ -575,9 +586,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	vertexShader->SetShader();
 	pixelShader->SetShader();
 
-	// Render the scene to the post process RTV
-	pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
-
+	// Render the scene to the post process RTV    
+    pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition().GetRaw());
 	pixelShader->SetData("light1", &light1, sizeof(Light));
 	pixelShader->SetData("light2", &light2, sizeof(Light));
 	pixelShader->SetData("light3", &light3, sizeof(Light));
@@ -589,7 +599,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	pixelShader->CopyAllBufferData();
 
-	pixelShaderNormal->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
+	pixelShaderNormal->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition().GetRaw());
 
 	pixelShaderNormal->SetData("light1", &light1, sizeof(Light));
 	pixelShaderNormal->SetData("light2", &light2, sizeof(Light));

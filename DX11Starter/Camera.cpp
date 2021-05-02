@@ -1,6 +1,8 @@
 #include "Camera.h"
 #include <math.h>
 #include <iostream>
+#include "Vector3.h"
+
 using namespace DirectX;
 
 Camera::Camera()
@@ -60,8 +62,8 @@ void Camera::SetFollowTransform(Transform* _transform)
 
 void Camera::UpdateViewMatrix()
 {
-	XMFLOAT3 tPos = transform.GetPosition();
-	XMFLOAT3 tFwd = transform.GetForward();
+	XMFLOAT3 tPos = transform.GetPosition().GetRaw();
+	XMFLOAT3 tFwd = transform.GetForward().GetRaw();
 
 	XMVECTOR pos = XMLoadFloat3(&tPos);
 	XMVECTOR fwd = XMLoadFloat3(&tFwd);
@@ -87,7 +89,7 @@ void Camera::Update(float deltaTime, HWND windowHandle)
 		xDiff *= mouseLookSpeed * deltaTime;
 		yDiff *= mouseLookSpeed * deltaTime;
 
-		float currentPitch = transform.GetEulerRotation().x;
+		float currentPitch = transform.GetEulerRotation().X();
 		if (currentPitch + yDiff > 1.5f || currentPitch + yDiff < -1.5f) 
 		{
 			yDiff = 0.f;
@@ -106,15 +108,13 @@ void Camera::Update(float deltaTime, HWND windowHandle)
 
 	if (followTransform != nullptr)
 	{
-		XMFLOAT3 ftPos = followTransform->GetPosition();
-		XMVECTOR ftPosVec = XMLoadFloat3(&ftPos);
+		Vector3 ftPos = followTransform->GetPosition();
+		Vector3 camFwd = transform.GetForward();
 
-		XMFLOAT3 thisFwd = transform.GetForward();
-		XMVECTOR thisFwdVec = XMLoadFloat3(&thisFwd);
-		thisFwdVec = XMVectorScale(thisFwdVec, orbitDistance);
+		camFwd = camFwd * orbitDistance;
 
-		XMFLOAT3 newPos;
-		XMStoreFloat3(&newPos, XMVectorSubtract(ftPosVec, thisFwdVec));
+
+		Vector3 newPos = ftPos - camFwd;
 		transform.SetPosition(newPos);
 	}
 

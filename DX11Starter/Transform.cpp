@@ -64,10 +64,10 @@ Vector3 Transform::GetScale()
 DirectX::XMFLOAT4X4 Transform::GetWorldMatrix()
 {
 	if (transformDirty) {
-		XMMATRIX translationMatrix = XMMatrixTranslation(position.x, position.y, position.z);
+		XMMATRIX translationMatrix = XMMatrixTranslation(position.X(), position.Y(), position.Z());
 
-		XMMATRIX scaleMatrix = XMMatrixScaling(scale.x, scale.y, scale.z);
-		XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(eulerRotation.x, eulerRotation.y, eulerRotation.z);
+		XMMATRIX scaleMatrix = XMMatrixScaling(scale.X(), scale.Y(), scale.Z());
+		XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(eulerRotation.X(), eulerRotation.Y(), eulerRotation.Z());
 
 		XMMATRIX world = scaleMatrix * rotationMatrix * translationMatrix;
 
@@ -126,25 +126,19 @@ void Transform::MoveRelative(float x, float y, float z)
 
 void Transform::MoveAlong(Vector3 direction, float speed)
 {
-	XMVECTOR moveVector = XMVectorSet(direction.x * speed, direction.y * speed, direction.z * speed, 0);
-	XMVECTOR pos = XMLoadFloat3(&position);
-	pos += moveVector;
-	XMStoreFloat3(&position, pos);
+	Vector3 moveVector = direction * speed;
+	position = position + moveVector;
 	transformDirty = true;
 }
 
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
-	XMVECTOR rot = XMLoadFloat3(&eulerRotation);
-	rot += XMVectorSet(pitch, yaw, roll, 0);
-	XMStoreFloat3(&eulerRotation, rot);
+	eulerRotation = eulerRotation + Vector3(pitch, yaw, roll);
 	transformDirty = true;
 }
 
 void Transform::Scale(float x, float y, float z)
 {
-	XMVECTOR scl = XMLoadFloat3(&scale);
-	scl += XMVectorSet(x, y, z, 0);
-	XMStoreFloat3(&scale, scl);
+	scale = scale + Vector3(x, y, z);
 	transformDirty = true;
 }

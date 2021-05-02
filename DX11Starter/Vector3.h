@@ -15,6 +15,7 @@ public:
 	float X();
 	float Y();
 	float Z();
+	DirectX::XMFLOAT3 GetRaw();
 
 	//setters
 	void Set(float x, float y, float z);
@@ -30,5 +31,6 @@ public:
 	void Normalize();
 	Vector3 operator+(const Vector3& b);
 	Vector3 operator-(const Vector3& b);
+	Vector3 operator*(float b);
 };
 

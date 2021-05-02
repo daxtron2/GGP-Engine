@@ -1,6 +1,7 @@
 #include "SphereCollider.h"
 
 using namespace DirectX;
+
 SphereCollider::SphereCollider(Transform* attachedTransform, float sphereRadius)
 {
 	center = attachedTransform;
@@ -9,8 +10,9 @@ SphereCollider::SphereCollider(Transform* attachedTransform, float sphereRadius)
 
 bool SphereCollider::CheckOverlap(SphereCollider* otherCollider)
 {
-	XMFLOAT3 thisPos = center->GetPosition();
-	XMFLOAT3 otherPos = otherCollider->center->GetPosition();
+	Vector3 thisPos = center->GetPosition();
+	Vector3 otherPos = otherCollider->center->GetPosition();
 
-
+	float sqrDistance = powf(otherPos.X() - thisPos.X(), 2) + powf(otherPos.Y() - thisPos.Y(), 2) + powf(otherPos.Z() - thisPos.Z(), 2);
+	return sqrDistance <= powf(this->radius + otherCollider->radius, 2);
 }

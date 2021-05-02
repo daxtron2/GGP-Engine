@@ -34,6 +34,11 @@ float Vector3::Z()
     return float3.z;
 }
 
+DirectX::XMFLOAT3 Vector3::GetRaw()
+{
+    return float3;
+}
+
 //setters
 void Vector3::Set(float x, float y, float z)
 {
@@ -103,5 +108,13 @@ Vector3 Vector3::operator-(const Vector3& b)
 
     Vector3 returned;
     XMStoreFloat3(&returned.float3, newPos);
+    return returned;
+}
+
+Vector3 Vector3::operator*(float b)
+{
+    XMVECTOR thisVec = XMLoadFloat3(&float3);
+    Vector3 returned;
+    XMStoreFloat3(&returned.float3, XMVectorScale(thisVec, b));
     return returned;
 }
