@@ -22,12 +22,12 @@ VertexToPixel main( uint vertexId : SV_VertexID )
 	VertexToPixel output;
 
 	output.uv = float2(0, 0);
-	output.uv.x = (vertexId << 1) & 2; // Add 2 if the first bit is 1 (ID #1)
-	output.uv.y = (vertexId & 2); // Add 2 if the second bit is 1 (ID #2)
+	output.uv.x = float(vertexId & 1) * 2; // Add 2 if the first bit is 1 (ID #1)
+	output.uv.y = float((vertexId & 2) >> 1) * 2; // Add 2 if the second bit is 1 (ID #2)
 
 	output.position = float4(0, 0, 0, 1);
-	output.position.x = (output.uv.x) * 2 - 1;
-	output.position.y = (output.uv.y) * -2 + 1;
+	output.position.x = -1 + float(vertexId & 1) * 4; // Add 4 if the first bit is 1 (ID #1)
+	output.position.y = +1 + float((vertexId & 2) >> 1) * -4; // Add 4 if the second bit is 1 (ID #2)
 
 	return output;
 }

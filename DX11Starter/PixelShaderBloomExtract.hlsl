@@ -14,12 +14,11 @@ SamplerState samplerOptions : register(s0);
 
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	return float4(1.0f, 0.0f, 0.0f, 1.0f);
 	// Given an input texture, if all RGB values are under a given threshold, return (0, 0, 0)
-	// float4 brightness = drawTexture.Sample(samplerOptions, input.uv);
+	float4 brightness = drawTexture.Sample(samplerOptions, input.uv);
 
-	//if (brightness.x >= bloomThreshold || brightness.y >= bloomThreshold || brightness.z >= bloomThreshold)
-	//	return float4(brightness.x, brightness.x, brightness.x, 1.0f);
+	if (brightness.x >= bloomThreshold || brightness.y >= bloomThreshold || brightness.z >= bloomThreshold)
+		return float4(brightness);
 
 	return float4(0.0f, 0.0f, 0.0f, 1.0f);
 }

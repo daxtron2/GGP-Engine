@@ -40,6 +40,7 @@ private:
 	void ResizePostProcessRTVAndSRVPair(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale);
 	void BloomExtract();
 	void BloomCombine();
+	void WeightedBlur(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale);
 	
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -59,6 +60,7 @@ private:
 	// POST PROCESS
 	std::shared_ptr<SimplePixelShader> pixelShaderBloomExtract;
 	std::shared_ptr<SimplePixelShader> pixelShaderBloomCombine;
+	std::shared_ptr<SimplePixelShader> pixelShaderWeightedBlur;
 	std::shared_ptr<SimpleVertexShader> vertexShaderPostProcess;
 
 	std::vector<std::shared_ptr<Mesh>> meshes;
@@ -79,9 +81,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerStatePostProcess;
 
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> postProcessRTV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> postProcessSRV;
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> bloomExtractRTV; // Draw bloom post-processing to this texture
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomExtractSRV; // Sample bloom post-processing from this texture
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> postProcessRTV; // Draw the "normal" data to this texture instead of the screen
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> postProcessSRV; // Use to sample the texture drawn by postProcessRTV
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> bloomExtractRTV;	// Extract only pixels above a minimum lightness threshold
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomExtractSRV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> bloomLayersRTV[3]; // Apply sequential layers of blurring
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomLayersSRV[3];
 };
 

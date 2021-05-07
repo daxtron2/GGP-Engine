@@ -109,6 +109,7 @@ void Game::LoadShaders()
 	vertexShaderPostProcess = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderPostProcess.cso").c_str());
 	pixelShaderBloomExtract = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderBloomExtract.cso").c_str());
 	pixelShaderBloomCombine = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderBloomCombine.cso").c_str());
+	pixelShaderWeightedBlur = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderWeightedBlur.cso").c_str());
 }
 
 void Game::LoadModels() 
@@ -273,6 +274,12 @@ void Game::ResizePostProcessResources()
 {
 	ResizePostProcessRTVAndSRVPair(postProcessRTV, postProcessSRV, 1.0f);
 	ResizePostProcessRTVAndSRVPair(bloomExtractRTV, bloomExtractSRV, 0.5f);
+
+	float renderTargetScale = 0.5f;
+	for (int i = 0; i < 3; i++) {
+		ResizePostProcessRTVAndSRVPair(bloomLayersRTV[i], bloomLayersSRV[i], renderTargetScale);
+		renderTargetScale *= 0.5f;
+	}
 }
 
 void Game::ResizePostProcessRTVAndSRVPair(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale) {
@@ -328,17 +335,15 @@ void Game::BloomExtract()
 	context->RSSetViewports(1, &viewport);
 
 	// Draw the result to a texture rather than the screen
-	// ^ TODO
-	// context->OMSetRenderTargets(1, bloomExtractRTV.GetAddressOf(), 0);
-	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
-
+	context->OMSetRenderTargets(1, bloomExtractRTV.GetAddressOf(), 0);
+	
 	// Use the bloom-specific shader with the scene objects drawn to postProcessSRV
 	pixelShaderBloomExtract->SetShader();
 	pixelShaderBloomExtract->SetShaderResourceView("drawTexture", postProcessSRV.Get());
 	pixelShaderBloomExtract->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
 
 	// Set the cutoff brightness for pixels to influence bloom
-	pixelShaderBloomExtract->SetFloat("bloomThreshold", 0.9f);
+	pixelShaderBloomExtract->SetFloat("bloomThreshold", 0.5f);
 	pixelShaderBloomExtract->CopyAllBufferData();
 
 	// Draw the dynamically rendered triangle
@@ -353,6 +358,52 @@ void Game::BloomCombine()
 	viewport.Height = height;
 	viewport.MaxDepth = 1.0f;
 	context->RSSetViewports(1, &viewport);
+
+	// Prepare for drawing to the screen since this is the last step in the render pipeline
+	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+	// Set up the BloomCombine pixel shader with the layered textures
+	pixelShaderBloomCombine->SetShader();
+	pixelShaderBloomCombine->SetShaderResourceView("preBloomPixels", postProcessSRV.Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer0", bloomExtractSRV.Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer1", bloomExtractSRV.Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer2", bloomExtractSRV.Get());
+	pixelShaderBloomCombine->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
+
+	// Apply constants for each layer's intensity
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer0", 1.0f);
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer1", 1.0f);
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer2", 1.0f);
+	pixelShaderBloomCombine->CopyAllBufferData();
+
+	// Draw the dynamically rendered triangle
+	context->Draw(3, 0);
+}
+
+void Game::WeightedBlur(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale)
+{
+	// Resize the viewport to match the render target scale
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = width * renderTargetScale;
+	viewport.Height = height * renderTargetScale;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+
+	// Draw to the specified RTV
+	context->OMSetRenderTargets(1, RTV.GetAddressOf(), 0);
+
+	// Change the pixel shader to Weighted Blur
+	pixelShaderWeightedBlur->SetShader();
+	pixelShaderWeightedBlur->SetShaderResourceView("inputLayer", SRV.Get());
+	pixelShaderWeightedBlur->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
+
+	// Calculate the pixel->UV width/height based on the screen's width/height and the render target scale
+	XMFLOAT2 pixelToUVSize = XMFLOAT2(1.0f / width / renderTargetScale, 1.0f / height / renderTargetScale);
+	pixelShaderWeightedBlur->SetFloat2("pixelToUVSize", pixelToUVSize);
+	pixelShaderWeightedBlur->CopyAllBufferData();
+
+	// it's high noon
+	context->Draw(3, 0);
 }
 
 // --------------------------------------------------------
@@ -489,6 +540,17 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	// Generate a texture of the screen with all pixels under a brightness treshold set to black
 	BloomExtract();
+
+	// After the bloom pixels have been extracted, blur the pixels to generate bloom
+	// For the first layer, use bloomExtractSRV as the input
+	float renderTargetScale = 0.5f;
+	WeightedBlur(bloomLayersRTV[0], bloomExtractSRV, renderTargetScale);
+
+	// For the next layers, use bloomLayer[n-1] as the input
+	for (int i = 1; i < 3; i++) {
+		renderTargetScale *= 0.5f;
+		WeightedBlur(bloomLayersRTV[i], bloomLayersSRV[i-1], renderTargetScale);
+	}
 
 	// Apply bloom blur/iteration
 	BloomCombine();
