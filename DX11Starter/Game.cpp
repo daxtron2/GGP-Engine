@@ -463,9 +463,9 @@ void Game::BloomCombine()
 	// Set up the BloomCombine pixel shader with the layered textures
 	pixelShaderBloomCombine->SetShader();
 	pixelShaderBloomCombine->SetShaderResourceView("preBloomPixels", postProcessSRV.Get());
-	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer0", bloomExtractSRV.Get());
-	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer1", bloomExtractSRV.Get());
-	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer2", bloomExtractSRV.Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer0", bloomLayersSRV[0].Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer1", bloomLayersSRV[1].Get());
+	pixelShaderBloomCombine->SetShaderResourceView("bloomLayer2", bloomLayersSRV[2].Get());
 	pixelShaderBloomCombine->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
 
 	// Apply constants for each layer's intensity
