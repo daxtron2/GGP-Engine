@@ -39,17 +39,31 @@ public:
 	Vector3 operator-(const Vector3& b);
 	Vector3 operator*(float b);
 	Vector3 operator*=(float b);
+
+	
+	static float GetRandomFloat(float min, float max)
+	{
+		return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
+	}
+
+	static Vector3 GetRandomUnitVector()
+	{
+		return (Vector3(GetRandomFloat(-1, 1), GetRandomFloat(-1, 1), GetRandomFloat(-1, 1))).Normalize();
+	}
+
+	static Vector3 DotProduct(Vector3 a, Vector3 b)
+	{		
+		DirectX::XMFLOAT3 aRaw = a.GetRaw();
+		DirectX::XMFLOAT3 bRaw = b.GetRaw();
+
+		DirectX::XMVECTOR aVec = XMLoadFloat3(&aRaw);
+		DirectX::XMVECTOR bVec = XMLoadFloat3(&bRaw);
+
+		DirectX::XMVECTOR dotResult = DirectX::XMVector3Dot(aVec, bVec);
+
+		Vector3 result;
+		XMStoreFloat3(&result.float3, dotResult);
+		return result;
+	}
 };
 
-#ifndef DAX2_GLOBAL_MATH
-#define DAX2_GLOBAL_MATH
-inline float GetRandomFloat(float min, float max)
-{
-	return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-}
-
-inline Vector3 GetRandomUnitVector()
-{
-	return (Vector3(GetRandomFloat(-1, 1), GetRandomFloat(-1, 1), GetRandomFloat(-1, 1))).Normalize();
-}
-#endif

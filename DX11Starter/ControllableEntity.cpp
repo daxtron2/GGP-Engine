@@ -41,6 +41,15 @@ void ControllableEntity::Update(float deltaTime, float totalTime)
 	{
 		for (int i = 0; i < currentCollisions.size(); i++)
 		{
+			Vector3 myPos = transform.GetPosition();
+			Vector3 otherPos = currentCollisions[i]->GetTransform()->GetPosition();
+
+			Vector3 surfNormal = (otherPos - myPos).Normalize();
+
+			Vector3 moveDir = currentCollisions[i]->movementDirection;
+			Vector3 newDir = surfNormal + moveDir;
+
+			currentCollisions[i]->movementDirection = newDir;
 			currentCollisions[i]->Kill();
 		}
 	}

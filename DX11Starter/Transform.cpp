@@ -126,7 +126,7 @@ void Transform::MoveRelative(float x, float y, float z)
 
 void Transform::MoveAlong(Vector3 direction, float speed)
 {
-	Vector3 moveVector = direction * speed;
+	Vector3 moveVector = direction.Normalize() * speed;
 	position = position + moveVector;
 	transformDirty = true;
 }
