@@ -9,7 +9,7 @@
 #include <memory>
 #include "Camera.h"
 #include "Lights.h"
-#include "Sky.h"
+#include "Skybox.h"
 
 class Game 
 	: public DXCore
@@ -31,7 +31,14 @@ private:
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders(); 
 	void LoadModels();
-	void LoadTextures();
+	void LoadTextures(); 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateCubemap(
+		const wchar_t* right,
+		const wchar_t* left,
+		const wchar_t* up,
+		const wchar_t* down,
+		const wchar_t* front,
+		const wchar_t* back);
 	void CreateBasicGeometry();
 	void CreateEntities();
 	void CreateLights();
@@ -67,7 +74,7 @@ private:
 	std::vector<std::unique_ptr<Entity>> entities;
 
 	std::shared_ptr<Camera> camera;
-	std::shared_ptr<Sky> skybox;
+	std::shared_ptr<Skybox> skybox;
 
 	Light directionalLight1 = Light();
 	Light directionalLight2 = Light();

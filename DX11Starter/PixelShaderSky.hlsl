@@ -4,10 +4,10 @@ struct VertexToPixel
 	float3 sampleDir	: DIRECTION;
 }; 
 
-TextureCube cubeMap			: register(t0);
+TextureCube textureCube		: register(t0);
 SamplerState samplerOptions : register(s0);
 
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	return cubeMap.Sample(samplerOptions, input.sampleDir);
+	return textureCube.Sample(samplerOptions, input.sampleDir);
 }
