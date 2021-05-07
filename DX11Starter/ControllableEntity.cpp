@@ -7,51 +7,51 @@ ControllableEntity::ControllableEntity(std::shared_ptr<Mesh> _mesh, std::shared_
 	Input = &InputManager::GetInstance();
 	camera = _camera;
 
-	movementSpeed = 1.f;
+	movementSpeed = 2.5f;
 
 }
 
 void ControllableEntity::Update(float deltaTime, float totalTime)
 {
-	for (int i = 0; i < asteroids.size(); i++)
-	{
-		SphereCollider* astCol = asteroids[i]->GetCollider();
-		if (collider->CheckOverlap(astCol)) 
-		{
-			asteroids[i]->GetTransform()->Rotate(0, 1.f, 0);
-			std::cout << "Player overlaps with " << i << std::endl;
-		}
-	}
 	float speed = (Input->GetKey(VK_SHIFT) ? movementSpeed * 2 : movementSpeed) * deltaTime;
 
 	if (Input->GetKey('W'))
 	{
-		transform.MoveAlong(camera->GetTransform()->GetXZForward(), speed);
+		transform.MoveAlong(Vector3(0, 1, 0), speed);
 	}
 	if (Input->GetKey('A'))
 	{
-		transform.MoveAlong(camera->GetTransform()->GetXZRight(), -speed);
+		transform.MoveAlong(Vector3(-1, 0, 0), speed);
 	}
 	if (Input->GetKey('S'))
 	{
-		transform.MoveAlong(camera->GetTransform()->GetXZForward(), -speed);
+		transform.MoveAlong(Vector3(0, -1, 0), speed);
 	}
 	if (Input->GetKey('D'))
 	{
-		transform.MoveAlong(camera->GetTransform()->GetXZRight(), speed);
+		transform.MoveAlong(Vector3(1, 0, 0), speed);
 	}
 	if (Input->GetKey(VK_SPACE))
 	{
-		transform.MoveRelative(0, speed, 0);
-	}
-	if (Input->GetKey(VK_LCONTROL))
-	{
-		transform.MoveRelative(0, -speed, 0);
+
 	}
 
+	currentCollisions.clear();
+	if (asteroidManager->CheckOverlap(this, &currentCollisions))
+	{
+		for (int i = 0; i < currentCollisions.size(); i++)
+		{
+			currentCollisions[i]->Kill();
+		}
+	}
+
+	if (transform.GetPosition().GetSqrMagnitude() >= 9.f)
+	{
+		transform.SetPosition(transform.GetPosition().Normalize() * 3.f);
+	}
 }
 
-void ControllableEntity::AddAsteroid(Asteroid* asteroid)
+void ControllableEntity::AddAsteroidManager(std::shared_ptr<AsteroidManager> _asteroidManager)
 {
-	asteroids.push_back(asteroid);
+	asteroidManager = _asteroidManager;
 }

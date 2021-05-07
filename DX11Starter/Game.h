@@ -10,6 +10,10 @@
 #include "Camera.h"
 #include "Lights.h"
 #include "Skybox.h"
+#include "AsteroidManager.h"
+#include "ControllableEntity.h"
+#include "Asteroid.h"
+
 
 class Game 
 	: public DXCore
@@ -58,9 +62,6 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 
-	std::shared_ptr<SimplePixelShader> pixelShaderNormal;
-	std::shared_ptr<SimpleVertexShader> vertexShaderNormal;
-
 	std::shared_ptr<SimplePixelShader> pixelShaderSky;
 	std::shared_ptr<SimpleVertexShader> vertexShaderSky;
 
@@ -71,10 +72,13 @@ private:
 	std::shared_ptr<SimpleVertexShader> vertexShaderPostProcess;
 
 	std::vector<std::shared_ptr<Mesh>> meshes;
-	std::vector<std::unique_ptr<Entity>> entities;
+	//std::vector<std::unique_ptr<Entity>> entities;
+	std::unique_ptr<ControllableEntity> player;
 
 	std::shared_ptr<Camera> camera;
 	std::shared_ptr<Skybox> skybox;
+
+	std::shared_ptr<AsteroidManager> asteroidManager;
 
 	Light light1 = Light();
 	Light light2 = Light();

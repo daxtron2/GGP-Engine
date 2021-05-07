@@ -133,7 +133,12 @@ void Transform::MoveAlong(Vector3 direction, float speed)
 
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
-	eulerRotation = eulerRotation + Vector3(pitch, yaw, roll);
+	Rotate(Vector3(pitch, yaw, roll));
+}
+
+void Transform::Rotate(Vector3 pyrDirection)
+{
+	eulerRotation = eulerRotation + pyrDirection;
 	transformDirty = true;
 }
 

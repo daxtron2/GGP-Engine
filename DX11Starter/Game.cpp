@@ -10,7 +10,7 @@
 // Needed for a helper function to read compiled shader files from the hard drive
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
-#include "Asteroid.h"
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -59,12 +59,9 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	srand(time(NULL));
-	// Helper methods for loading shaders, creating some basic
-	// geometry to draw and some simple camera matrices.
-	//  - You'll be expanding and/or replacing these later
+	srand((unsigned int)time(NULL));
+
 	LoadShaders();
-	//CreateBasicGeometry();
 	LoadModels();
 	LoadTextures();
 	camera = std::make_shared<Camera>(XMFLOAT3(0, 0, -10), XMFLOAT3(0, 0, 0), (float)width / (float)height, 60.f, 0.01f, 1000.f, 1.f);
@@ -86,7 +83,6 @@ void Game::Init()
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	
 
 }
 
@@ -100,11 +96,8 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	vertexShader = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShader.cso").c_str());
-	pixelShader = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShader.cso").c_str());
-
-	vertexShaderNormal = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderNormal.cso").c_str());
-	pixelShaderNormal = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderNormal.cso").c_str());
+	vertexShader = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderNormal.cso").c_str());
+	pixelShader = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderNormal.cso").c_str());
 
 	vertexShaderSky = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderSky.cso").c_str());
 	pixelShaderSky = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderSky.cso").c_str());
@@ -115,7 +108,7 @@ void Game::LoadShaders()
 	pixelShaderWeightedBlur = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderWeightedBlur.cso").c_str());
 }
 
-void Game::LoadModels() 
+void Game::LoadModels()
 {
 	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/sphere.obj").c_str(), device));
 	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cube.obj").c_str(), device));
@@ -126,14 +119,6 @@ void Game::LoadModels()
 
 void Game::LoadTextures()
 {
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion.png", nullptr, &diffuseTexture1);
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal.png", nullptr, &diffuseTexture2);
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock.png", nullptr, &diffuseTexture3);
-
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\cushion_normals.png", nullptr, &normalTexture1);
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\metal_normals.png", nullptr, &normalTexture2);
-	//CreateWICTextureFromFile(device.Get(), context.Get(), L".\\Assets\\Textures\\A8\\rock_normals.png", nullptr, &normalTexture3);
-
 	CreateDDSTextureFromFile(device.Get(), L".\\Assets\\Textures\\Skies\\SunnyCubeMap.dds", nullptr, &skyTexture);
 }
 
@@ -290,9 +275,9 @@ void Game::CreateBasicGeometry()
 		pentagonIndices, 9,
 		device));
 }
-void Game::CreateEntities() {
 
-
+void Game::CreateEntities()
+{
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -305,42 +290,26 @@ void Game::CreateEntities() {
 	device->CreateSamplerState(&samplerDesc, &samplerState);
 
 
-	
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
+
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
 																L".\\Assets\\Textures\\PBR\\floor", device, context);
 
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShaderNormal, vertexShaderNormal, samplerState.Get(), 
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
 																L".\\Assets\\Textures\\PBR\\cobblestone", device, context);
 
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(), 
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
 																L".\\Assets\\Textures\\PBR\\scratched", device, context);
 
 
-	//creates test scene
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat1)));
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[1], mat2)));
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[2], mat3)));
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[3], mat1)));
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[4], mat3)));
-
-	////follows point light
-	//entities.push_back(std::make_unique<Entity>(Entity(meshes[0], mat3)));
-	//entities[5]->GetTransform()->SetScale(0.2f, 0.2f, 0.2f);
-
-
 	//create a controllable player entity and attach the camera to it
-	entities.push_back(std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get()));
-	camera->SetFollowTransform(entities.back()->GetTransform());
+	player = std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get());
+	camera->SetFollowTransform(player->GetTransform());
 
-	//pool 10 asteroid entities
-	for (int i = 0; i < 10; i++) 
-	{
-		entities.push_back(std::make_unique<Asteroid>(meshes[0], mat2));
+	asteroidManager = std::make_shared<AsteroidManager>(meshes[0], mat2);
+	player->AddAsteroidManager(asteroidManager);
 
-		Asteroid* asteroid = (Asteroid*)entities.back().get();
 
-		((ControllableEntity*)entities[0].get())->AddAsteroid(asteroid);
-	}
+
 }
 void Game::CreateLights()
 {
@@ -348,7 +317,7 @@ void Game::CreateLights()
 	light1.intensity = 1.0f;
 	light1.direction = XMFLOAT3(1, -1, 1);
 	light1.type = 0;//directional
-	
+
 	light2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
 	light2.intensity = 1.0f;
 	light2.direction = XMFLOAT3(-1, -1, 1);
@@ -530,7 +499,7 @@ void Game::OnResize()
 
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
-	if (camera != nullptr)
+	if(camera != nullptr)
 	{
 		camera->UpdateProjectionMatrix((float)this->width / this->height);
 	}
@@ -542,18 +511,13 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	// Quit if the escape key is pressed
-	if (GetAsyncKeyState(VK_ESCAPE))
+	if(GetAsyncKeyState(VK_ESCAPE))
 		Quit();
 
-	for (size_t i = 0; i < entities.size(); i++)
-	{
-		entities[i]->Update(deltaTime, totalTime);
-	}
+	player->Update(deltaTime, totalTime);
+	asteroidManager->Update(deltaTime, totalTime);
 	camera->Update(deltaTime, this->hWnd);
-	
-	//orbiting point light
-	//light2.worldPos = XMFLOAT3(sin(totalTime) * 7, cos(totalTime) * 7, 0);
-	//entities[5]->GetTransform()->SetPosition(light2.worldPos);
+
 }
 
 // --------------------------------------------------------
@@ -591,33 +555,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->SetData("light1", &light1, sizeof(Light));
 	pixelShader->SetData("light2", &light2, sizeof(Light));
 	pixelShader->SetData("light3", &light3, sizeof(Light));
-
-
-
-
 	pixelShader->SetFloat3("ambientColor", ambientColor);
-
 	pixelShader->CopyAllBufferData();
 
-	pixelShaderNormal->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition().GetRaw());
-
-	pixelShaderNormal->SetData("light1", &light1, sizeof(Light));
-	pixelShaderNormal->SetData("light2", &light2, sizeof(Light));
-	pixelShaderNormal->SetData("light3", &light3, sizeof(Light));
-
-
-
-
-	pixelShaderNormal->SetFloat3("ambientColor", ambientColor);
-
-	pixelShaderNormal->CopyAllBufferData();
-
-	for (int i = 0; i < entities.size(); i++)
-	{
-		entities[i]->Draw(context, camera.get());		
-	}
-
-	skybox->Draw(context, camera.get()->GetViewMatrix(), camera.get()->GetProjectionMatrix());
+	player->Draw(context, camera.get());
+	asteroidManager->Draw(context, camera.get());
+	skybox->Draw(context, camera.get());
 
 #pragma region Post Processing
 	// Unbind the existing vertex and index buffers to prepare for drawing

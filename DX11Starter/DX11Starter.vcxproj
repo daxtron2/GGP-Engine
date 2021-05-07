@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Asteroid.cpp" />
+    <ClCompile Include="AsteroidManager.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ControllableEntity.cpp" />
     <ClCompile Include="DXCore.cpp" />
@@ -141,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Asteroid.h" />
+    <ClInclude Include="AsteroidManager.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ControllableEntity.h" />
     <ClInclude Include="DXCore.h" />

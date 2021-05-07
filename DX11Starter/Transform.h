@@ -35,6 +35,7 @@ public:
 	void MoveRelative(float x, float y, float z);
 	void MoveAlong(Vector3 direction, float speed);
 	void Rotate(float pitch, float yaw, float roll);
+	void Rotate(Vector3 pyrDirection);
 	void Scale(float x, float y, float z);
 
 };
