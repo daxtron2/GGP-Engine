@@ -36,8 +36,10 @@ private:
 	void CreateEntities();
 	void CreateLights();
 	void CreateSkyBox();
-
-
+	void ResizePostProcessResources();
+	void ResizePostProcessRTVAndSRVPair(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale);
+	void BloomExtract();
+	void BloomCombine();
 	
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
@@ -53,6 +55,11 @@ private:
 
 	std::shared_ptr<SimplePixelShader> pixelShaderSky;
 	std::shared_ptr<SimpleVertexShader> vertexShaderSky;
+
+	// POST PROCESS
+	std::shared_ptr<SimplePixelShader> pixelShaderBloomExtract;
+	std::shared_ptr<SimplePixelShader> pixelShaderBloomCombine;
+	std::shared_ptr<SimpleVertexShader> vertexShaderPostProcess;
 
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::unique_ptr<Entity>> entities;
@@ -70,6 +77,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> skyTexture;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerStatePostProcess;
 
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> postProcessRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> postProcessSRV;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> bloomExtractRTV; // Draw bloom post-processing to this texture
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomExtractSRV; // Sample bloom post-processing from this texture
 };
 

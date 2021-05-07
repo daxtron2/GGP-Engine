@@ -66,6 +66,16 @@ void Game::Init()
 	CreateEntities();
 	CreateLights();
 	CreateSkyBox();
+	ResizePostProcessResources();
+
+	// Set up the post process sampler state
+	D3D11_SAMPLER_DESC samplerStatePostProcessDesc = {};
+	samplerStatePostProcessDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerStatePostProcessDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerStatePostProcessDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerStatePostProcessDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerStatePostProcessDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&samplerStatePostProcessDesc, samplerStatePostProcess.GetAddressOf());
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -87,7 +97,6 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-
 	vertexShader = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShader.cso").c_str());
 
@@ -96,6 +105,10 @@ void Game::LoadShaders()
 
 	vertexShaderSky = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderSky.cso").c_str());
 	pixelShaderSky = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderSky.cso").c_str());
+
+	vertexShaderPostProcess = std::make_shared<SimpleVertexShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"VertexShaderPostProcess.cso").c_str());
+	pixelShaderBloomExtract = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderBloomExtract.cso").c_str());
+	pixelShaderBloomCombine = std::make_shared<SimplePixelShader>(device.Get(), context.Get(), GetFullPathTo_Wide(L"PixelShaderBloomCombine.cso").c_str());
 }
 
 void Game::LoadModels() 
@@ -254,12 +267,102 @@ void Game::CreateSkyBox()
 		skyTexture,
 		device);
 }
+
+// For each post-process resource, create an associated texture/RTV/SRV within the device
+void Game::ResizePostProcessResources()
+{
+	ResizePostProcessRTVAndSRVPair(postProcessRTV, postProcessSRV, 1.0f);
+	ResizePostProcessRTVAndSRVPair(bloomExtractRTV, bloomExtractSRV, 0.5f);
+}
+
+void Game::ResizePostProcessRTVAndSRVPair(Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& RTV, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& SRV, float renderTargetScale) {
+	// Create a texture description associated with the RTV/SRV
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = (unsigned int)(width * renderTargetScale);
+	textureDesc.Height = (unsigned int)(height * renderTargetScale);
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the texture
+	ID3D11Texture2D* postProcessTexture;
+	device->CreateTexture2D(&textureDesc, 0, &postProcessTexture);
+
+	// Create the description for the Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+	RTVDesc.Format = textureDesc.Format;
+	RTVDesc.Texture2D.MipSlice = 0;
+	RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+	// Create the RTV
+	device->CreateRenderTargetView(postProcessTexture, &RTVDesc, RTV.ReleaseAndGetAddressOf());
+
+	// Create the description for the Shader Resource View
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+	SRVDesc.Format = textureDesc.Format;
+	SRVDesc.Texture2D.MipLevels = 1;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+
+	// Create the SRV
+	device->CreateShaderResourceView(postProcessTexture, &SRVDesc, SRV.ReleaseAndGetAddressOf());
+
+	// The pointer is no longer needed, release the memory
+	postProcessTexture->Release();
+}
+
+// Create the extracted bloom texture from the drawn screen
+void Game::BloomExtract()
+{
+	// Use a texture that's half of the viewport size for a cheap blur effect
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = width * 0.5f;
+	viewport.Height = height * 0.5f;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+
+	// Draw the result to a texture rather than the screen
+	// ^ TODO
+	// context->OMSetRenderTargets(1, bloomExtractRTV.GetAddressOf(), 0);
+	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+	// Use the bloom-specific shader with the scene objects drawn to postProcessSRV
+	pixelShaderBloomExtract->SetShader();
+	pixelShaderBloomExtract->SetShaderResourceView("drawTexture", postProcessSRV.Get());
+	pixelShaderBloomExtract->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
+
+	// Set the cutoff brightness for pixels to influence bloom
+	pixelShaderBloomExtract->SetFloat("bloomThreshold", 0.9f);
+	pixelShaderBloomExtract->CopyAllBufferData();
+
+	// Draw the dynamically rendered triangle
+	context->Draw(3, 0);
+}
+
+void Game::BloomCombine()
+{
+	// Reset the viewport to the original size
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = width;
+	viewport.Height = height;
+	viewport.MaxDepth = 1.0f;
+	context->RSSetViewports(1, &viewport);
+}
+
 // --------------------------------------------------------
 // Handle resizing DirectX "stuff" to match the new window size.
 // For instance, updating our projection matrix's aspect ratio.
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	ResizePostProcessResources();
+
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 	if (camera != nullptr)
@@ -304,6 +407,18 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	// Clear the post-process textures as well
+	context->ClearRenderTargetView(postProcessRTV.Get(), color);
+	context->ClearRenderTargetView(bloomExtractRTV.Get(), color);
+	
+	// Change the render target to be the post process RTV instead of the screen
+	context->OMSetRenderTargets(1, postProcessRTV.GetAddressOf(), depthStencilView.Get());
+
+	// TODO: Determine if shaders should be set here
+	vertexShader->SetShader();
+	pixelShader->SetShader();
+
+	// Render the scene to the post process RTV
 	pixelShader->SetFloat3("cameraPosition", camera->GetTransform()->GetPosition());
 
 	pixelShader->SetData(
@@ -352,6 +467,40 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	skybox->Draw(context, camera.get());
+
+#pragma region Post Processing
+	// Unbind the existing vertex and index buffers to prepare for drawing
+	// the post-process texture onto a dynamically generated triangle
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	ID3D11Buffer* nullBuffer = 0;
+	context->IASetIndexBuffer(0, DXGI_FORMAT_R32_UINT, 0);
+	context->IASetVertexBuffers(0, 1, &nullBuffer, &stride, &offset);
+
+	// Resume drawing to the back buffer
+	// context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+	// Set the vertex shader used by all post processing
+	vertexShaderPostProcess->SetShader();
+
+	// Set the new sampler 
+	// Assumes that all post-process pixel shaders have a resource 
+	// context->PSSetSamplers(0, 1, samplerStatePostProcess.GetAddressOf());
+
+	// Generate a texture of the screen with all pixels under a brightness treshold set to black
+	BloomExtract();
+
+	// Apply bloom blur/iteration
+	BloomCombine();
+
+	// Unbind all SRVs so they can be drawn to in the next frame
+	// Less than 32 SRVs currently exist, but a high number is used as a buffer for future development
+	ID3D11ShaderResourceView* nullSRVs[32] = {};
+	context->PSSetShaderResources(0, 32, nullSRVs);
+
+	// Draw the dynamically rendered triangle
+	// context->Draw(3, 0);
+#pragma endregion
 
 
 	// Present the back buffer to the user
