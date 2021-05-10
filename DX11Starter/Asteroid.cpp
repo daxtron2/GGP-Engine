@@ -16,7 +16,7 @@ void Asteroid::Init()
 	tweenScale = Vector3(1, 1, 1);
 
 	//random position
-	float randLength = Vector3::GetRandomFloat(0.f, 5.f);
+	float randLength = Vector3::GetRandomFloat(0.f, 10.f);
 	Vector3 randPosInCircle = (Vector3::GetRandomUnitVector() * randLength) ;
 	int zVariation = rand() % 10;
 	randPosInCircle.Z(10.f + zVariation);

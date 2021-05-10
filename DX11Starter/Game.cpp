@@ -539,12 +539,37 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		spriteBatch->Begin();
 
+		//score text
 		std::wstring scoreText = L"Score: " + std::to_wstring(player->GetScore());
-
 		spriteFont->DrawString(
 			spriteBatch.get(),
 			scoreText.c_str(),
 			XMFLOAT2(10, 10)
+		);
+
+		//curr asteroid count
+		std::wstring currAsteroidText = L"# of Asteroids: " + std::to_wstring(asteroidManager->GetAsteroidCount());
+		spriteFont->DrawString(
+			spriteBatch.get(),
+			currAsteroidText.c_str(),
+			XMFLOAT2(width - 270, 10)
+		);
+
+		//instruction texts
+		spriteFont->DrawString(
+			spriteBatch.get(),
+			L"WASD to move Up/Down/Left/Right",
+			XMFLOAT2(10, height - 150)
+		);
+		spriteFont->DrawString(
+			spriteBatch.get(),
+			L"Left click and drag to orbit camera",
+			XMFLOAT2(10, height - 100)
+		);
+		spriteFont->DrawString(
+			spriteBatch.get(),
+			L"Hit asteroids with your death star to get points",
+			XMFLOAT2(10, height - 50)
 		);
 
 		spriteBatch->End();

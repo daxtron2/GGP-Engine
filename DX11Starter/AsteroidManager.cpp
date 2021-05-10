@@ -77,3 +77,8 @@ bool AsteroidManager::CheckOverlap(Entity* entity, std::vector<Asteroid*>* colli
 
 	return collidedAsteroids->size() > 0;
 }
+
+int AsteroidManager::GetAsteroidCount()
+{
+	return activeAsteroidCount;
+}

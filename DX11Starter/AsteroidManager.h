@@ -15,5 +15,6 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera);
 	bool CheckOverlap(Entity* entity, std::vector<Asteroid*>* collidedAsteroids);
+	int GetAsteroidCount();
 };
 
