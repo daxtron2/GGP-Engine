@@ -1,12 +1,14 @@
 #pragma once
 #include <DirectXMath.h>
+#include "Vector3.h"
+
 class Transform
 {
 private:
 	DirectX::XMFLOAT4X4 worldMatrix;
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT3 scale;
-	DirectX::XMFLOAT3 eulerRotation;
+	Vector3 position;
+	Vector3 scale;
+	Vector3 eulerRotation;
 	bool transformDirty;
 
 public:
@@ -15,19 +17,25 @@ public:
 	void SetRotation(float pitch, float yaw, float roll);
 	void SetScale(float x, float y, float z);
 
-	void SetPosition(DirectX::XMFLOAT3 pos);
-	void SetRotation(DirectX::XMFLOAT3 rot);
-	void SetScale(DirectX::XMFLOAT3 sca);
+	void SetPosition(Vector3 pos);
+	void SetRotation(Vector3 rot);
+	void SetScale(Vector3 sca);
 
-	DirectX::XMFLOAT3 GetPosition();
-	DirectX::XMFLOAT3 GetEulerRotation();
-	DirectX::XMFLOAT3 GetScale();
+	Vector3 GetPosition();
+	Vector3 GetEulerRotation();
+	Vector3 GetScale();
 	DirectX::XMFLOAT4X4 GetWorldMatrix();
-	DirectX::XMFLOAT3 GetForward();
+	Vector3 GetForward();
+	Vector3 GetXZForward();
+	Vector3 GetRight();
+	Vector3 GetXZRight();
+
 
 	void MoveAbsolute(float x, float y, float z);
 	void MoveRelative(float x, float y, float z);
+	void MoveAlong(Vector3 direction, float speed);
 	void Rotate(float pitch, float yaw, float roll);
+	void Rotate(Vector3 pyrDirection);
 	void Scale(float x, float y, float z);
 
 };

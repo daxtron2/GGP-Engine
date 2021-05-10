@@ -1,17 +1,28 @@
 #include "Entity.h"
+#include <iostream>
+
+Entity::Entity()
+{
+	material = nullptr;
+	mesh = nullptr;
+	collider = new SphereCollider(&transform, .5f);
+}
 
 Entity::Entity(std::shared_ptr<Mesh> _mesh, std::shared_ptr<Material> _material)
 {
 	material = _material;
 	mesh = _mesh;
-	float randX = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
-	float randZ = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+	collider = new SphereCollider(&transform, .5f);
 
-	transform.SetPosition(randX, 0, 0);
+	//float randX = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+	//float randZ = -5.0f + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (5.0f - -5.0f)));
+
+	//transform.SetPosition(randX, 0, 0);
 }
 
 Entity::~Entity()
 {
+	delete collider;
 }
 
 std::shared_ptr<Mesh> Entity::GetMesh()
@@ -23,14 +34,26 @@ Transform* Entity::GetTransform()
 {
 	return &transform;
 }
-void Entity::Update(float deltaTime, float totalTime) 
+
+SphereCollider* Entity::GetCollider()
 {
-	//XMFLOAT3 pos = transform.GetPosition();
-	//transform.SetPosition(pos.x, sinf(totalTime), pos.z);
-	//transform.Rotate(0, 0, 1 * deltaTime);
-	//transform.SetScale(sinf(totalTime) + 1.5f, sinf(totalTime) + 1.5f, 1);
+	return collider;
 }
 
+Material* Entity::GetMaterial()
+{
+	return material.get();
+}
+
+void Entity::SetMesh(std::shared_ptr<Mesh> _mesh)
+{
+	mesh = _mesh;
+}
+
+void Entity::SetMaterial(std::shared_ptr<Material> _material)
+{
+	material = _material;
+}
 
 void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera)
 {
@@ -81,4 +104,10 @@ void Entity::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* c
 		mesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
 		0,     // Offset to the first index we want to use
 		0);    // Offset to add to each index when looking up vertices
+}
+
+void Entity::Update(float deltaTime, float totalTime)
+{
+	//std::cout << "yate" << std::endl;
+
 }

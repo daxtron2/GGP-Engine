@@ -104,7 +104,7 @@ struct Light
 	float3 color;
 	float intensity;
 	float3 direction;
-	int type; //0 - directional, 1-point
+	int type; //0 - directional, 1-point, 2-spot
 	float3 worldPos;
 	float range;
 };
@@ -130,9 +130,18 @@ float3 CalculateLight(Light light, float3 normal, float3 surfaceColor, float3 wo
 	{
 		dirToLight = normalize(-light.direction);
 	}
-	else if (light.type == 1) //point
+	else if (light.type == 1 || light.type == 2) //point or spot
 	{
 		dirToLight = normalize(light.worldPos - worldPos);
+	}
+	float spotAmount = 1.f;
+	float coneAttenuation = 1.f;
+	if (light.type == 2) {
+		float angleFromCenter = max(dot(dirToLight, light.direction), 0.0f);
+
+		spotAmount = pow(angleFromCenter, light.intensity);
+		coneAttenuation = saturate((angleFromCenter - 3.f) / 10.f);
+		coneAttenuation *= coneAttenuation;
 	}
 
 	float diffuseAmt = Diffuse(normal, dirToLight);
@@ -147,7 +156,7 @@ float3 CalculateLight(Light light, float3 normal, float3 surfaceColor, float3 wo
 
 	float3 balancedDiff = DiffuseEnergyConserve(diffuseAmt, specularity, metalness);
 
-	return (balancedDiff * surfaceColor + specularity) * light.intensity * light.color;
+	return (balancedDiff * surfaceColor + specularity) * light.intensity * light.color * spotAmount;
 }
 
 
@@ -164,7 +173,7 @@ float3 CalculateFinalColor(VertexToPixel input, SamplerState samplerState, Textu
 
 	float3 toCam = normalize(cameraPosition - input.worldPos);
 
-	float3 finalColor = surfaceColor * ambientColor.rgb +
+	float3 finalColor = surfaceColor * 
 			CalculateLight(light1, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
 			CalculateLight(light2, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
 			CalculateLight(light3, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor);
