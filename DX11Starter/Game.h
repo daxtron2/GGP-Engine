@@ -13,6 +13,9 @@
 #include "AsteroidManager.h"
 #include "ControllableEntity.h"
 #include "Asteroid.h"
+#include <SpriteBatch.h>
+#include <SpriteFont.h>
+
 
 
 class Game 
@@ -98,5 +101,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomExtractSRV;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> bloomLayersRTV[3]; // Apply sequential layers of blurring
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bloomLayersSRV[3];
+
+	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> spriteFont;
+
 };
 

@@ -84,6 +84,9 @@ void Game::Init()
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+
+	spriteBatch = std::make_unique<SpriteBatch>(context.Get());
+	spriteFont = std::make_unique<SpriteFont>(device.Get(), L".\\Assets\\arial.spritefont");
 }
 
 // --------------------------------------------------------
@@ -110,11 +113,8 @@ void Game::LoadShaders()
 
 void Game::LoadModels()
 {
-	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/sphere.obj").c_str(), device));
-	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cube.obj").c_str(), device));
-	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/torus.obj").c_str(), device));
-	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/cylinder.obj").c_str(), device));
-	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/helix.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/asteroid.obj").c_str(), device));
+	meshes.push_back(std::make_shared<Mesh>(GetFullPathTo("../../Assets/Models/DeathStar_f.obj").c_str(), device));
 }
 
 void Game::LoadTextures()
@@ -169,12 +169,15 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Game::CreateCubemap(
 	cubeDesc.SampleDesc.Count = 1;
 	cubeDesc.SampleDesc.Quality = 0;
 	// Create the actual texture resource
-	ID3D11Texture2D* cubeMapTexture = 0;
+	ID3D11Texture2D* cubeMapTexture = nullptr;
 	device->CreateTexture2D(&cubeDesc, 0, &cubeMapTexture);
+	if(cubeMapTexture == nullptr) throw;
 	// Loop through the individual face textures and copy them,
 	// one at a time, to the cube map texure
 	for (int i = 0; i < 6; i++)
 	{
+		if(textures[i] == nullptr) throw;
+
 		// Calculate the subresource position to copy into
 		unsigned int subresource = D3D11CalcSubresource(
 			0, // Which mip (zero, since there's only one)
@@ -207,75 +210,6 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Game::CreateCubemap(
 	return cubeSRV;
 }
 
-// --------------------------------------------------------
-// Creates the geometry we're going to draw - a single triangle for now
-// --------------------------------------------------------
-void Game::CreateBasicGeometry()
-{
-
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in memory
-	//    over to a DirectX-controlled data structure (the vertex buffer)
-	// - Note: Since we don't have a camera or really any concept of
-	//    a "3d world" yet, we're simply describing positions within the
-	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	// - This means (0,0) is at the very center of the screen.
-	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	//    Screen Coords", which are ways to describe a position without
-	//    knowing the exact size (in pixels) of the image/window/etc.  
-	// - Long story short: Resizing the window also resizes the triangle,
-	//    since we're describing the triangle in terms of the window itself
-	Vertex triangleVerts[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-	};
-
-	// Set up the indices, which tell us which vertices to use and in which order
-	// - This is somewhat redundant for just 3 vertices (it's a simple example)
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int triangleIndices[] = { 0, 1, 2 };
-
-	//create and store the triangle mesh
-	meshes.push_back(std::make_shared<Mesh>(
-		triangleVerts, 3,
-		triangleIndices, 3,
-		device));
-
-	Vertex squareVerts[] =
-	{
-		{ XMFLOAT3(-0.25f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //top left
-		{ XMFLOAT3(+0.25f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //top right
-		{ XMFLOAT3(+0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },//bottom right
-		{ XMFLOAT3(-0.25f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) }, //bottom left
-	};
-	unsigned int squareIndices[] = { 0, 1, 2, 0, 2, 3 };
-
-	meshes.push_back(std::make_shared<Mesh>(
-		squareVerts, 4,
-		squareIndices, 6,
-		device));
-
-	Vertex pentagonVerts[] =
-	{
-		{ XMFLOAT3(-0.00f, +0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(+0.10f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(-0.10f, -0.25f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(-0.15f, +0.05f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-		{ XMFLOAT3(+0.15f, +0.05f, +0.0f), XMFLOAT3(0,0,-1), XMFLOAT2(0,0) },
-
-	};
-	unsigned int pentagonIndices[] = { 0, 1, 2, 2, 3, 0, 0, 4, 1 };
-
-	meshes.push_back(std::make_shared<Mesh>(
-		pentagonVerts, 5,
-		pentagonIndices, 9,
-		device));
-}
-
 void Game::CreateEntities()
 {
 
@@ -289,45 +223,36 @@ void Game::CreateEntities()
 
 	device->CreateSamplerState(&samplerDesc, &samplerState);
 
-
-
 	std::shared_ptr<Material> mat1 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
-																L".\\Assets\\Textures\\PBR\\floor", device, context);
+																L".\\Assets\\Textures\\Asteroid\\asteroid", device, context);
 
 	std::shared_ptr<Material> mat2 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
-																L".\\Assets\\Textures\\PBR\\cobblestone", device, context);
-
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(pixelShader, vertexShader, samplerState.Get(),
-																L".\\Assets\\Textures\\PBR\\scratched", device, context);
-
+																L".\\Assets\\Textures\\DeathStar\\DeathStar", device, context);
 
 	//create a controllable player entity and attach the camera to it
-	player = std::make_unique<ControllableEntity>(meshes[0], mat1, camera.get());
+	player = std::make_unique<ControllableEntity>(meshes[1], mat2, camera.get());
 	camera->SetFollowTransform(player->GetTransform());
 
-	asteroidManager = std::make_shared<AsteroidManager>(meshes[0], mat2);
+	asteroidManager = std::make_shared<AsteroidManager>(meshes[0], mat1, player.get());
 	player->AddAsteroidManager(asteroidManager);
-
-
-
 }
+
 void Game::CreateLights()
 {
 	light1.color = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	light1.intensity = 1.0f;
-	light1.direction = XMFLOAT3(1, -1, 1);
+	light1.intensity = 2.0f;
+	light1.direction = XMFLOAT3(1, -0.25, 1);
 	light1.type = 0;//directional
 
-	light2.color = XMFLOAT3(0.1f, 1.0f, 0.1f);
-	light2.intensity = 1.0f;
+	light2.color = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	light2.intensity = 0.75f;
 	light2.direction = XMFLOAT3(-1, -1, 1);
 	light2.type = 1;//point
 
-	light3.color = XMFLOAT3(1, 0, 0);
-	light3.intensity = 1.0f;
-	light3.worldPos = XMFLOAT3(0.f, 5.f, 0.f);
-	light3.direction = XMFLOAT3(0, -1, 0);
-	light3.type = 2;//spot
+	light3.color = XMFLOAT3(1, 0, .5f);
+	light3.intensity = 0.55f;
+	light3.direction = XMFLOAT3(-1, 0, 0);
+	light3.type = 0;//directional
 }
 void Game::CreateSkyBox()
 {
@@ -390,6 +315,8 @@ void Game::ResizePostProcessRTVAndSRVPair(Microsoft::WRL::ComPtr<ID3D11RenderTar
 	RTVDesc.Texture2D.MipSlice = 0;
 	RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
+	if(postProcessTexture == nullptr) throw;
+
 	// Create the RTV
 	device->CreateRenderTargetView(postProcessTexture, &RTVDesc, RTV.ReleaseAndGetAddressOf());
 
@@ -426,7 +353,7 @@ void Game::BloomExtract()
 	pixelShaderBloomExtract->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
 
 	// Set the cutoff brightness for pixels to influence bloom
-	pixelShaderBloomExtract->SetFloat("bloomThreshold", 0.5f);
+	pixelShaderBloomExtract->SetFloat("bloomThreshold", 0.4f);
 	pixelShaderBloomExtract->CopyAllBufferData();
 
 	// Draw the dynamically rendered triangle
@@ -437,8 +364,8 @@ void Game::BloomCombine()
 {
 	// Reset the viewport to the original size
 	D3D11_VIEWPORT viewport = {};
-	viewport.Width = width;
-	viewport.Height = height;
+	viewport.Width = static_cast<float>(width);
+	viewport.Height = static_cast<float>(height);
 	viewport.MaxDepth = 1.0f;
 	context->RSSetViewports(1, &viewport);
 
@@ -454,9 +381,9 @@ void Game::BloomCombine()
 	pixelShaderBloomCombine->SetSamplerState("samplerOptions", samplerStatePostProcess.Get()); // TODO: Move to setting in post processing block
 
 	// Apply constants for each layer's intensity
-	pixelShaderBloomCombine->SetFloat("intensityBloomLayer0", 1.0f);
-	pixelShaderBloomCombine->SetFloat("intensityBloomLayer1", 1.0f);
-	pixelShaderBloomCombine->SetFloat("intensityBloomLayer2", 1.0f);
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer0", 1.7f);
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer1", 1.5f);
+	pixelShaderBloomCombine->SetFloat("intensityBloomLayer2", 1.3f);
 	pixelShaderBloomCombine->CopyAllBufferData();
 
 	// Draw the dynamically rendered triangle
@@ -517,6 +444,7 @@ void Game::Update(float deltaTime, float totalTime)
 	player->Update(deltaTime, totalTime);
 	asteroidManager->Update(deltaTime, totalTime);
 	camera->Update(deltaTime, this->hWnd);
+
 
 }
 
@@ -607,6 +535,27 @@ void Game::Draw(float deltaTime, float totalTime)
 	// context->Draw(3, 0);
 #pragma endregion
 
+	//ui draws
+	{
+		spriteBatch->Begin();
+
+		std::wstring scoreText = L"Score: " + std::to_wstring(player->GetScore());
+
+		spriteFont->DrawString(
+			spriteBatch.get(),
+			scoreText.c_str(),
+			XMFLOAT2(10, 10)
+		);
+
+		spriteBatch->End();
+
+		float blendFactor[4] = { 1,1,1,1 };
+		context->OMSetBlendState(0, blendFactor, 0xFFFFFFFF);
+		context->RSSetState(0);
+		context->OMSetDepthStencilState(0, 0);
+	}
+
+
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it
@@ -616,4 +565,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Due to the usage of a more sophisticated swap chain,
 	// the render target must be re-bound after every call to Present()
 	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthStencilView.Get());
+
+
 }

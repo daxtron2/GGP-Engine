@@ -173,7 +173,7 @@ float3 CalculateFinalColor(VertexToPixel input, SamplerState samplerState, Textu
 
 	float3 toCam = normalize(cameraPosition - input.worldPos);
 
-	float3 finalColor = surfaceColor * ambientColor.rgb +
+	float3 finalColor = surfaceColor * 
 			CalculateLight(light1, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
 			CalculateLight(light2, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor) +
 			CalculateLight(light3, input.normal, surfaceColor, input.worldPos, toCam, roughness, metalness, specularColor);

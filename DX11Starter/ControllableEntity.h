@@ -13,6 +13,7 @@ private:
 	InputManager* Input;
 	std::shared_ptr<AsteroidManager> asteroidManager;
 	std::vector<Asteroid*> currentCollisions;
+	int currScore;
 
 public:
 	ControllableEntity(std::shared_ptr<Mesh>, std::shared_ptr<Material>, Camera*);
@@ -20,4 +21,6 @@ public:
 	void Update(float deltaTime, float totalTime) override;
 
 	void AddAsteroidManager(std::shared_ptr<AsteroidManager>);
+
+	int GetScore();
 };

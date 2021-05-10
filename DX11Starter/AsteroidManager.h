@@ -3,7 +3,6 @@
 #include "Mesh.h"
 #include "Entity.h"
 
-
 class AsteroidManager
 {
 private:
@@ -11,7 +10,7 @@ private:
 	int activeAsteroidCount;
 
 public:
-	AsteroidManager(std::shared_ptr<Mesh> _astMesh, std::shared_ptr<Material> _astMat);
+	AsteroidManager(std::shared_ptr<Mesh> _astMesh, std::shared_ptr<Material> _astMat, Entity* _player);
 
 	void Update(float deltaTime, float totalTime);
 	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera);

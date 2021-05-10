@@ -111,7 +111,7 @@ void Camera::Update(float deltaTime, HWND windowHandle)
 		Vector3 ftPos = followTransform->GetPosition();
 		Vector3 camFwd = transform.GetForward();
 
-		camFwd = camFwd * orbitDistance;
+		camFwd *= orbitDistance;
 
 		Vector3 newPos = ftPos - camFwd;
 		transform.SetPosition(newPos);

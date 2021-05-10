@@ -6,7 +6,7 @@ class Vector3
 private:
 	DirectX::XMFLOAT3 float3;
 
-public:	
+public:
 	//ctors
 	Vector3();
 	Vector3(float x, float y, float z);
@@ -38,9 +38,15 @@ public:
 	Vector3 operator+(const Vector3& b);
 	Vector3 operator-(const Vector3& b);
 	Vector3 operator*(float b);
-	Vector3 operator*=(float b);
 
-	
+	Vector3 operator*=(float b);
+	Vector3 operator+=(const Vector3& b);
+
+	bool operator==(Vector3 b);
+	bool operator!=(Vector3 b);
+
+
+
 	static float GetRandomFloat(float min, float max)
 	{
 		return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
@@ -52,7 +58,7 @@ public:
 	}
 
 	static Vector3 DotProduct(Vector3 a, Vector3 b)
-	{		
+	{
 		DirectX::XMFLOAT3 aRaw = a.GetRaw();
 		DirectX::XMFLOAT3 bRaw = b.GetRaw();
 

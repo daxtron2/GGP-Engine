@@ -42,7 +42,7 @@ Skybox::Skybox(
 /// <param name="context">device context</param>
 /// <param name="viewMatrix">camera->GetViewMatrix()</param>
 /// <param name="projectionMatrix">camera->GetProjectionMatrix()</param>
-void Skybox::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, DirectX::XMFLOAT4X4 viewMatrix, DirectX::XMFLOAT4X4 projectionMatrix)
+void Skybox::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera)
 {
 	// Change render states
 	context->RSSetState(rasterizerState.Get());
@@ -53,8 +53,8 @@ void Skybox::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, DirectX::
 	pixelShader->SetShader();
 
 	// Copy necessary data for VSSkybox cbuffer
-	vertexShader->SetMatrix4x4("view", viewMatrix);
-	vertexShader->SetMatrix4x4("projection", projectionMatrix);
+	vertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
+	vertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
 	vertexShader->CopyAllBufferData();
 
 	// Set the current sampler state and SRV

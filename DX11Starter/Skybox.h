@@ -9,6 +9,8 @@
 #include "Mesh.h"
 #include "SimpleShader.h"
 #include "WICTextureLoader.h" // Load textures using the DirectX Tool Kit
+#include "Camera.h"
+
 
 class Skybox
 {
@@ -32,6 +34,6 @@ public:
 		std::shared_ptr<SimpleVertexShader> vertexShader,
 		std::shared_ptr<SimplePixelShader> pixelShader);
 
-	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, DirectX::XMFLOAT4X4 viewMatrix, DirectX::XMFLOAT4X4 projectionMatrix);
+	void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Camera* camera);
 };
 

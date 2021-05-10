@@ -8,7 +8,7 @@ ControllableEntity::ControllableEntity(std::shared_ptr<Mesh> _mesh, std::shared_
 	camera = _camera;
 
 	movementSpeed = 2.5f;
-
+	currScore = 0;
 }
 
 void ControllableEntity::Update(float deltaTime, float totalTime)
@@ -50,17 +50,29 @@ void ControllableEntity::Update(float deltaTime, float totalTime)
 			Vector3 newDir = surfNormal + moveDir;
 
 			currentCollisions[i]->movementDirection = newDir;
+			if(!currentCollisions[i]->ScoreCollected)
+			{
+				currScore++;
+			}
 			currentCollisions[i]->Kill();
 		}
 	}
 
-	if (transform.GetPosition().GetSqrMagnitude() >= 9.f)
-	{
-		transform.SetPosition(transform.GetPosition().Normalize() * 3.f);
-	}
+	//keep in bounding circle
+	//if (transform.GetPosition().GetSqrMagnitude() >= 9.f)
+	//{
+	//	transform.SetPosition(transform.GetPosition().Normalize() * 3.f);
+	//}
+
+	transform.Rotate(0, deltaTime *.5f, 0);
 }
 
 void ControllableEntity::AddAsteroidManager(std::shared_ptr<AsteroidManager> _asteroidManager)
 {
 	asteroidManager = _asteroidManager;
+}
+
+int ControllableEntity::GetScore()
+{
+	return currScore;
 }

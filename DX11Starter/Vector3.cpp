@@ -142,5 +142,23 @@ Vector3 Vector3::operator*(float b)
 
 Vector3 Vector3::operator*=(float b)
 {
-    return *this * b;
+    *this = *this * b;
+    return *this;
+}
+
+Vector3 Vector3::operator+=(const Vector3& b)
+{
+    *this = *this + b;
+
+    return *this;
+}
+
+bool Vector3::operator==(Vector3 b)
+{
+    return (this->X() == b.X()) && (this->Y() == b.Y()) && (this->Z() == b.Z());
+}
+
+bool Vector3::operator!=(Vector3 b)
+{
+    return !(*this == b);
 }

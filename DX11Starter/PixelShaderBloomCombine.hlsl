@@ -21,9 +21,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	float4 brightness = preBloomPixels.Sample(samplerOptions, input.uv);
 
-	brightness += bloomLayer0.Sample(samplerOptions, input.uv);
-	brightness += bloomLayer1.Sample(samplerOptions, input.uv);
-	brightness += bloomLayer2.Sample(samplerOptions, input.uv);
+	brightness += bloomLayer0.Sample(samplerOptions, input.uv) * intensityBloomLayer0;
+	brightness += bloomLayer1.Sample(samplerOptions, input.uv) * intensityBloomLayer1;
+	brightness += bloomLayer2.Sample(samplerOptions, input.uv) * intensityBloomLayer2;
 
-	return brightness;
+	return brightness ;
 }
